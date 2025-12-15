@@ -4,7 +4,7 @@ import { jwtDecode } from "jwt-decode";
 import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext(null);
-export const API_BASE = "https://edu-spring.runasp.net";
+export const API_BASE = `${process.env.EXPO_BASE_URL}`;
 
 export const AuthProvider = ({ children }) => {
   const [authState, setAuthState] = useState({
