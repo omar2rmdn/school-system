@@ -1,22 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { EventResource } from "../types";
-
-type EventsResponse = {
-  message?: string;
-  data: EventResource[];
-  count?: number;
-};
+import type { EventMutationPayload, EventsResponse } from "../types";
 
 async function getEvents() {
   const { data } = await api.get<EventsResponse>("/events");
   return data.data;
 }
-
-type EventMutationPayload = {
-  title: string;
-  description: string;
-};
 
 async function createEvent(payload: EventMutationPayload) {
   const { data } = await api.post("/events", payload);

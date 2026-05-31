@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { getRelatedTitle } from "./helpers";
-import { timetableDays } from "./constants";
-import type { TimetableDetailsModalProps } from "./types";
-import type { TimetableDay } from "../../types";
+import { getRelatedTitle } from "../timetables/helpers";
+import { timetableDays } from "../../consts/index";
+import type { TimetableDay, TimetableDetailsModalProps } from "../../types";
 
 export default function TimetableDetailsModal({
   timetable,
@@ -33,7 +32,9 @@ export default function TimetableDetailsModal({
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-sm text-slate-500">Class timetable</p>
-              <h2 className="mt-1 text-2xl font-semibold text-slate-950">{classTitle}</h2>
+              <h2 className="mt-1 text-2xl font-semibold text-slate-950">
+                {classTitle}
+              </h2>
             </div>
             <button
               type="button"
@@ -46,14 +47,19 @@ export default function TimetableDetailsModal({
 
           <div className="mt-6 space-y-3">
             {slotsByDay.map(({ day, slots }) => (
-              <div key={day} className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50">
+              <div
+                key={day}
+                className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50/50"
+              >
                 <button
                   type="button"
                   onClick={() => toggleDay(day)}
                   className="flex w-full items-center justify-between px-4 py-4 text-left hover:bg-slate-100/80"
                 >
                   <div>
-                    <h3 className="text-sm font-semibold text-slate-900">{day}</h3>
+                    <h3 className="text-sm font-semibold text-slate-900">
+                      {day}
+                    </h3>
                   </div>
                   <span className="text-sm font-medium text-slate-500">
                     {openDays.includes(day) ? "Hide" : "Show"}
@@ -63,7 +69,9 @@ export default function TimetableDetailsModal({
                 {openDays.includes(day) ? (
                   <div className="border-t border-slate-200 px-4 py-4">
                     {slots.length === 0 ? (
-                      <p className="text-sm text-slate-400">No slots scheduled.</p>
+                      <p className="text-sm text-slate-400">
+                        No slots scheduled.
+                      </p>
                     ) : (
                       <div className="space-y-3">
                         {slots.map((slot, index) => (

@@ -1,5 +1,5 @@
-import type { DaySlot, TimetableFormModalProps } from "./types";
-import { timetableDays } from "./constants";
+import type { DaySlot, TimetableFormModalProps } from "../../types";
+import { timetableDays } from "../../consts/index";
 
 export default function TimetableFormModal({
   mode,
@@ -16,19 +16,29 @@ export default function TimetableFormModal({
   const heading = mode === "create" ? "Add Timetable" : "Edit Timetable";
   const submitLabel = mode === "create" ? "Create" : "Save Changes";
 
-  function handleDaySlotChange(index: number, key: keyof DaySlot, value: string) {
+  function handleDaySlotChange(
+    index: number,
+    key: keyof DaySlot,
+    value: string,
+  ) {
     const newDays = [...values.days];
     newDays[index] = { ...newDays[index], [key]: value };
     onChange("days", newDays);
   }
 
   function addDaySlot() {
-    onChange("days", [...values.days, { day: "Sunday", startTime: "", endTime: "", subject: "" }]);
+    onChange("days", [
+      ...values.days,
+      { day: "Sunday", startTime: "", endTime: "", subject: "" },
+    ]);
   }
 
   function removeDaySlot(index: number) {
     if (values.days.length > 1) {
-      onChange("days", values.days.filter((_, i) => i !== index));
+      onChange(
+        "days",
+        values.days.filter((_, i) => i !== index),
+      );
     }
   }
 
@@ -86,48 +96,71 @@ export default function TimetableFormModal({
               </button>
             </div>
             {values.days.map((slot, index) => (
-              <div key={index} className="grid gap-4 sm:grid-cols-4 items-end rounded-xl border border-slate-200 p-4">
+              <div
+                key={index}
+                className="grid gap-4 sm:grid-cols-4 items-end rounded-xl border border-slate-200 p-4"
+              >
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-slate-700">Day</label>
+                  <label className="mb-2 block text-xs font-medium text-slate-700">
+                    Day
+                  </label>
                   <select
                     value={slot.day}
-                    onChange={(e) => handleDaySlotChange(index, "day", e.target.value)}
+                    onChange={(e) =>
+                      handleDaySlotChange(index, "day", e.target.value)
+                    }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                   >
                     {timetableDays.map((day) => (
-                      <option key={day} value={day}>{day}</option>
+                      <option key={day} value={day}>
+                        {day}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-slate-700">Subject</label>
+                  <label className="mb-2 block text-xs font-medium text-slate-700">
+                    Subject
+                  </label>
                   <select
                     value={slot.subject}
-                    onChange={(e) => handleDaySlotChange(index, "subject", e.target.value)}
+                    onChange={(e) =>
+                      handleDaySlotChange(index, "subject", e.target.value)
+                    }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                   >
                     <option value="">Select</option>
                     {subjectOptions.map((option) => (
-                      <option key={option.id} value={option.id}>{option.title}</option>
+                      <option key={option.id} value={option.id}>
+                        {option.title}
+                      </option>
                     ))}
                   </select>
                 </div>
                 <div>
-                  <label className="mb-2 block text-xs font-medium text-slate-700">Start Time</label>
+                  <label className="mb-2 block text-xs font-medium text-slate-700">
+                    Start Time
+                  </label>
                   <input
                     type="time"
                     value={slot.startTime}
-                    onChange={(e) => handleDaySlotChange(index, "startTime", e.target.value)}
+                    onChange={(e) =>
+                      handleDaySlotChange(index, "startTime", e.target.value)
+                    }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                   />
                 </div>
                 <div className="flex gap-2 items-end">
                   <div className="flex-1">
-                    <label className="mb-2 block text-xs font-medium text-slate-700">End Time</label>
+                    <label className="mb-2 block text-xs font-medium text-slate-700">
+                      End Time
+                    </label>
                     <input
                       type="time"
                       value={slot.endTime}
-                      onChange={(e) => handleDaySlotChange(index, "endTime", e.target.value)}
+                      onChange={(e) =>
+                        handleDaySlotChange(index, "endTime", e.target.value)
+                      }
                       className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-slate-400"
                     />
                   </div>

@@ -1,9 +1,6 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../store/auth/context";
-
-interface ProtectedProps {
-  allowedRoles?: string[];
-}
+import type { ProtectedProps } from "../types";
 
 export function Protected({ allowedRoles }: ProtectedProps) {
   const { auth, isReady } = useAuth();

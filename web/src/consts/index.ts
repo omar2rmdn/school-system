@@ -9,8 +9,9 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import type { TimetableDay } from "../types";
 
-export const navigationIcons = {
+const navigationIcons = {
   classes: LayoutGrid,
   subjects: BookOpen,
   students: UserPlus,
@@ -22,7 +23,7 @@ export const navigationIcons = {
   events: CalendarCheck,
 };
 
-export const navigationItems = [
+const navigationItems = [
   { label: "Classes", path: "/classes", icon: navigationIcons.classes },
   { label: "Subjects", path: "/subjects", icon: navigationIcons.subjects },
   { label: "Students", path: "/students", icon: navigationIcons.students },
@@ -40,4 +41,14 @@ export const navigationItems = [
     icon: navigationIcons.timetables,
   },
   { label: "Events", path: "/events", icon: navigationIcons.events },
-] as const;
+];
+
+const timetableDays: TimetableDay[] = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+];
+
+export { timetableDays, navigationItems, navigationIcons };

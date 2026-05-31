@@ -1,27 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { TimetableDay, TimetableResource } from "../types";
-
-type TimetablesResponse = {
-  message?: string;
-  data: TimetableResource[];
-  count?: number;
-};
+import type { TimetableMutationPayload, TimetablesResponse } from "../types";
 
 async function getTimetables() {
   const { data } = await api.get<TimetablesResponse>("/timetables");
   return data.data;
 }
-
-type TimetableMutationPayload = {
-  class?: string;
-  days: {
-    day: TimetableDay;
-    subject: string;
-    startTime: string;
-    endTime: string;
-  }[];
-};
 
 async function createTimetable(payload: TimetableMutationPayload) {
   const { data } = await api.post("/timetables", payload);

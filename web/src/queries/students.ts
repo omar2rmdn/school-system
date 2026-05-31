@@ -1,24 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { Student } from "../types";
-
-type StudentsResponse = {
-  message?: string;
-  data: Student[];
-  count?: number;
-};
+import type { StudentMutationPayload, StudentsResponse } from "../types";
 
 async function getStudents() {
   const { data } = await api.get<StudentsResponse>("/students");
   return data.data;
 }
-
-type StudentMutationPayload = {
-  firstName: string;
-  lastName: string;
-  class: string;
-  parentPhone: string;
-};
 
 async function createStudent(payload: StudentMutationPayload) {
   const { data } = await api.post("/students", payload);

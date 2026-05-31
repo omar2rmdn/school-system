@@ -1,19 +1,20 @@
-import type { DeleteTimetableModalProps } from "./types";
+import type { DeleteSubjectModalProps } from "../../types";
 
-export default function DeleteTimetableModal({
-  classTitle,
+export default function DeleteSubjectModal({
+  resource,
   errorMessage,
   isSubmitting,
   onClose,
   onConfirm,
-}: DeleteTimetableModalProps) {
+}: DeleteSubjectModalProps) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h2 className="text-xl font-semibold text-slate-950">Delete Timetable</h2>
+        <h2 className="text-xl font-semibold text-slate-950">Delete Subject</h2>
         <p className="mt-2 text-sm text-slate-600">
-          Delete the timetable for <span className="font-semibold text-slate-900">{classTitle}</span>? This
-          action cannot be undone.
+          Delete{" "}
+          <span className="font-semibold text-slate-900">{resource.title}</span>
+          ? This action cannot be undone.
         </p>
 
         {errorMessage ? (

@@ -1,4 +1,8 @@
-import { type FormEvent, useState } from "react";
+import { type SubmitEvent, useState } from "react";
+import DeleteStudentModal from "../components/modal/delete-student-modal";
+import StudentFormModal, {
+  defaultStudentFormValues,
+} from "../components/modal/student-form-modal";
 import { useClassesQuery } from "../queries/classes";
 import {
   useCreateStudentMutation,
@@ -7,7 +11,7 @@ import {
   useUpdateStudentMutation,
 } from "../queries/students";
 import { getQueryErrorMessage } from "../queries/users";
-import type { Student, TitledResource } from "../types";
+import type { ClassResource, Student, StudentFormValues } from "../types";
 
 const columns = [
   { key: "firstName", label: "First Name" },
@@ -17,45 +21,8 @@ const columns = [
   { key: "actions", label: "Actions" },
 ];
 
-type StudentFormValues = {
-  firstName: string;
-  lastName: string;
-  class: string;
-  parentPhone: string;
-};
-
-type StudentFormModalProps = {
-  mode: "create" | "edit";
-  values: StudentFormValues;
-  classOptions: { id: string; title: string }[];
-  errorMessage?: string;
-  isSubmitting: boolean;
-  isOptionsLoading: boolean;
-  onChange: <K extends keyof StudentFormValues>(
-    key: K,
-    value: StudentFormValues[K],
-  ) => void;
-  onClose: () => void;
-  onSubmit: (event: FormEvent<HTMLFormElement>) => void;
-};
-
-type DeleteStudentModalProps = {
-  student: Student;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-const defaultFormValues: StudentFormValues = {
-  firstName: "",
-  lastName: "",
-  class: "",
-  parentPhone: "",
-};
-
 function getStudentClassName(student: {
-  class?: string | TitledResource;
+  class?: string | ClassResource;
   className?: string;
 }) {
   if (student.class && typeof student.class === "object") {
@@ -65,9 +32,7 @@ function getStudentClassName(student: {
   return student.class || student.className || "-";
 }
 
-function getStudentClassId(student: {
-  class?: string | TitledResource;
-}) {
+function getStudentClassId(student: { class?: string | ClassResource }) {
   if (!student.class) {
     return "";
   }
@@ -75,195 +40,8 @@ function getStudentClassId(student: {
   return typeof student.class === "object" ? student.class._id : student.class;
 }
 
-function getParentPhone(student: {
-  parentPhone?: string;
-  phone?: string;
-}) {
+function getParentPhone(student: { parentPhone?: string; phone?: string }) {
   return student.parentPhone || student.phone || "-";
-}
-
-function StudentFormModal({
-  mode,
-  values,
-  classOptions,
-  errorMessage,
-  isSubmitting,
-  isOptionsLoading,
-  onChange,
-  onClose,
-  onSubmit,
-}: StudentFormModalProps) {
-  const heading = mode === "create" ? "Add Student" : "Edit Student";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-xl font-semibold text-slate-950">{heading}</h2>
-            <p className="mt-1 text-sm text-slate-500">
-              Enter the student details.
-            </p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-md px-2 py-1 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-          >
-            Close
-          </button>
-        </div>
-
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div>
-              <label
-                htmlFor="student-first-name"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                First Name
-              </label>
-              <input
-                id="student-first-name"
-                value={values.firstName}
-                onChange={(event) => onChange("firstName", event.target.value)}
-                placeholder="First name"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
-                autoFocus
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="student-last-name"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Last Name
-              </label>
-              <input
-                id="student-last-name"
-                value={values.lastName}
-                onChange={(event) => onChange("lastName", event.target.value)}
-                placeholder="Last name"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="student-class"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Class
-              </label>
-              <select
-                id="student-class"
-                value={values.class}
-                onChange={(event) => onChange("class", event.target.value)}
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
-              >
-                <option value="">Select a class</option>
-                {classOptions.map((option) => (
-                  <option key={option.id} value={option.id}>
-                    {option.title}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="student-parent-phone"
-                className="mb-2 block text-sm font-medium text-slate-700"
-              >
-                Parent Phone
-              </label>
-              <input
-                id="student-parent-phone"
-                value={values.parentPhone}
-                onChange={(event) => onChange("parentPhone", event.target.value)}
-                placeholder="Parent phone"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
-              />
-            </div>
-          </div>
-
-          <p className="text-sm text-slate-500">
-            {isOptionsLoading
-              ? "Loading classes..."
-              : "Parents are linked to students by parent phone."}
-          </p>
-
-          {errorMessage ? (
-            <p className="text-sm text-red-600">{errorMessage}</p>
-          ) : null}
-
-          <div className="flex justify-end gap-3">
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting || isOptionsLoading}
-              className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? "Saving..." : submitLabel}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
-  );
-}
-
-function DeleteStudentModal({
-  student,
-  errorMessage,
-  isSubmitting,
-  onClose,
-  onConfirm,
-}: DeleteStudentModalProps) {
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
-        <h2 className="text-xl font-semibold text-slate-950">Delete Student</h2>
-        <p className="mt-2 text-sm text-slate-600">
-          Delete{" "}
-          <span className="font-semibold text-slate-900">
-            {student.firstName} {student.lastName}
-          </span>
-          ? This action cannot be undone.
-        </p>
-
-        {errorMessage ? (
-          <p className="mt-4 text-sm text-red-600">{errorMessage}</p>
-        ) : null}
-
-        <div className="mt-6 flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={isSubmitting}
-            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isSubmitting ? "Deleting..." : "Delete"}
-          </button>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 export default function Students() {
@@ -276,11 +54,20 @@ export default function Students() {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
   const [deletingStudent, setDeletingStudent] = useState<Student | null>(null);
-  const [createValues, setCreateValues] = useState<StudentFormValues>(defaultFormValues);
-  const [editValues, setEditValues] = useState<StudentFormValues>(defaultFormValues);
+  const [createValues, setCreateValues] = useState<StudentFormValues>(
+    defaultStudentFormValues,
+  );
+  const [editValues, setEditValues] = useState<StudentFormValues>(
+    defaultStudentFormValues,
+  );
 
-  const classOptions = classes.map((item) => ({ id: item._id, title: item.title }));
-  const classLabelMap = new Map(classOptions.map((item) => [item.id, item.title]));
+  const classOptions = classes.map((item) => ({
+    id: item._id,
+    title: item.title,
+  }));
+  const classLabelMap = new Map(
+    classOptions.map((item) => [item.id, item.title]),
+  );
   const isOptionsLoading = isClassesLoading;
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
@@ -305,14 +92,15 @@ export default function Students() {
 
   function getInitialFormValues(student?: Student): StudentFormValues {
     if (!student) {
-      return defaultFormValues;
+      return defaultStudentFormValues;
     }
 
     return {
       firstName: student.firstName,
       lastName: student.lastName,
       class: getStudentClassId(student),
-      parentPhone: getParentPhone(student) === "-" ? "" : getParentPhone(student),
+      parentPhone:
+        getParentPhone(student) === "-" ? "" : getParentPhone(student),
     };
   }
 
@@ -325,20 +113,25 @@ export default function Students() {
     };
   }
 
-  async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateSubmit(event: SubmitEvent) {
     event.preventDefault();
 
     const payload = getPayload(createValues);
-    if (!payload.firstName || !payload.lastName || !payload.class || !payload.parentPhone) {
+    if (
+      !payload.firstName ||
+      !payload.lastName ||
+      !payload.class ||
+      !payload.parentPhone
+    ) {
       return;
     }
 
     await createStudentMutation.mutateAsync(payload);
-    setCreateValues(defaultFormValues);
+    setCreateValues(defaultStudentFormValues);
     setIsCreateOpen(false);
   }
 
-  async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEditSubmit(event: SubmitEvent) {
     event.preventDefault();
 
     if (!editingStudent) {
@@ -346,12 +139,20 @@ export default function Students() {
     }
 
     const payload = getPayload(editValues);
-    if (!payload.firstName || !payload.lastName || !payload.class || !payload.parentPhone) {
+    if (
+      !payload.firstName ||
+      !payload.lastName ||
+      !payload.class ||
+      !payload.parentPhone
+    ) {
       return;
     }
 
-    await updateStudentMutation.mutateAsync({ id: editingStudent._id, ...payload });
-    setEditValues(defaultFormValues);
+    await updateStudentMutation.mutateAsync({
+      id: editingStudent._id,
+      ...payload,
+    });
+    setEditValues(defaultStudentFormValues);
     setEditingStudent(null);
   }
 
@@ -366,7 +167,7 @@ export default function Students() {
 
   function openCreateModal() {
     createStudentMutation.reset();
-    setCreateValues(defaultFormValues);
+    setCreateValues(defaultStudentFormValues);
     setIsCreateOpen(true);
   }
 
@@ -424,29 +225,43 @@ export default function Students() {
               <tbody className="divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-3 py-6 text-sm text-slate-500">
+                    <td
+                      colSpan={columns.length}
+                      className="px-3 py-6 text-sm text-slate-500"
+                    >
                       Loading...
                     </td>
                   </tr>
                 ) : listErrorMessage ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-3 py-6 text-sm text-red-600">
+                    <td
+                      colSpan={columns.length}
+                      className="px-3 py-6 text-sm text-red-600"
+                    >
                       {listErrorMessage}
                     </td>
                   </tr>
                 ) : data.length === 0 ? (
                   <tr>
-                    <td colSpan={columns.length} className="px-3 py-6 text-sm text-slate-500">
+                    <td
+                      colSpan={columns.length}
+                      className="px-3 py-6 text-sm text-slate-500"
+                    >
                       No students found.
                     </td>
                   </tr>
                 ) : (
                   data.map((student) => (
                     <tr key={student._id}>
-                      <td className="px-3 py-3 text-sm text-slate-700">{student.firstName}</td>
-                      <td className="px-3 py-3 text-sm text-slate-700">{student.lastName}</td>
                       <td className="px-3 py-3 text-sm text-slate-700">
-                        {classLabelMap.get(getStudentClassId(student)) ?? getStudentClassName(student)}
+                        {student.firstName}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-slate-700">
+                        {student.lastName}
+                      </td>
+                      <td className="px-3 py-3 text-sm text-slate-700">
+                        {classLabelMap.get(getStudentClassId(student)) ??
+                          getStudentClassName(student)}
                       </td>
                       <td className="px-3 py-3 text-sm text-slate-700">
                         {getParentPhone(student)}
@@ -489,7 +304,7 @@ export default function Students() {
           onChange={(key, value) => updateFormValues("create", key, value)}
           onClose={() => {
             createStudentMutation.reset();
-            setCreateValues(defaultFormValues);
+            setCreateValues(defaultStudentFormValues);
             setIsCreateOpen(false);
           }}
           onSubmit={handleCreateSubmit}
@@ -507,7 +322,7 @@ export default function Students() {
           onChange={(key, value) => updateFormValues("edit", key, value)}
           onClose={() => {
             updateStudentMutation.reset();
-            setEditValues(defaultFormValues);
+            setEditValues(defaultStudentFormValues);
             setEditingStudent(null);
           }}
           onSubmit={handleEditSubmit}

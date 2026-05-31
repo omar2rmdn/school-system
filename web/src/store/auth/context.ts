@@ -1,11 +1,5 @@
 import { createContext, useContext } from "react";
-import type { AuthState } from "../../types";
-
-interface AuthContextType {
-  auth: AuthState | null;
-  setAuth: React.Dispatch<React.SetStateAction<AuthState | null>>;
-  isReady: boolean;
-}
+import type { AuthContextType } from "../../types";
 
 export const AuthContext = createContext<AuthContextType | null>(null);
 

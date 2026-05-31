@@ -1,7 +1,7 @@
-import type { TitledResource } from "../../types";
+import type { RelatedResource } from "../../types";
 
 function getRelatedTitle(
-  resource: string | TitledResource,
+  resource: string | RelatedResource,
   labelMap: Map<string, string>,
 ) {
   if (typeof resource === "object") {
@@ -11,7 +11,7 @@ function getRelatedTitle(
   return labelMap.get(resource) ?? resource;
 }
 
-function getRelatedId(resource: string | TitledResource) {
+function getRelatedId(resource: string | RelatedResource) {
   return typeof resource === "object" ? resource._id : resource;
 }
 

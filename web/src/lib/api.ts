@@ -1,6 +1,5 @@
 import axios from "axios";
-import type { Dispatch, SetStateAction } from "react";
-import type { AuthState } from "../types";
+import type { AuthSetter, AuthState } from "../types";
 
 const BASE_URL = import.meta.env.VITE_API_URL;
 
@@ -9,8 +8,6 @@ const api = axios.create({
   headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
-
-type AuthSetter = Dispatch<SetStateAction<AuthState | null>> | null;
 
 export const authState: {
   accessToken: string;

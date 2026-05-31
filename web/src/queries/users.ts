@@ -1,29 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import api from "../lib/api";
-import type { User, UserRole } from "../types";
-
-type UsersResponse = {
-  message?: string;
-  data: User[];
-  count?: number;
-};
+import type { UserMutationPayload, UserRole, UsersResponse } from "../types";
 
 async function getUsers() {
   const { data } = await api.get<UsersResponse>("/users");
   return data.data;
 }
-
-type UserMutationPayload = {
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  password?: string;
-  role: UserRole;
-  classes?: string[];
-  subjects?: string[];
-};
 
 async function createUser(payload: UserMutationPayload) {
   const { data } = await api.post("/users", payload);

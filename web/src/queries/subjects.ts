@@ -1,12 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import api from "../lib/api";
-import type { TitledResource } from "../types";
-
-type SubjectsResponse = {
-  message?: string;
-  data: TitledResource[];
-  count?: number;
-};
+import type { SubjectsResponse } from "../types";
 
 async function getSubjects() {
   const { data } = await api.get<SubjectsResponse>("/subjects");

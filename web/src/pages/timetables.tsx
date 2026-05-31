@@ -1,12 +1,11 @@
-import { type FormEvent, useState } from "react";
-import DeleteTimetableModal from "../components/timetables/delete-timetable-modal";
-import { getRelatedId, getRelatedTitle } from "../components/timetables/helpers";
-import TimetableDetailsModal from "../components/timetables/timetable-details-modal";
-import TimetableFormModal from "../components/timetables/timetable-form-modal";
+import { type SubmitEvent, useState } from "react";
+import DeleteTimetableModal from "../components/modal/delete-timetable-modal";
+import TimetableDetailsModal from "../components/modal/timetable-details-modal";
+import TimetableFormModal from "../components/modal/timetable-form-modal";
 import {
-  defaultFormValues,
-  type TimetableFormValues,
-} from "../components/timetables/types";
+  getRelatedId,
+  getRelatedTitle,
+} from "../components/timetables/helpers";
 import { useClassesQuery } from "../queries/classes";
 import { useSubjectsQuery } from "../queries/subjects";
 import {
@@ -16,28 +15,49 @@ import {
   useUpdateTimetableMutation,
 } from "../queries/timetables";
 import { getQueryErrorMessage } from "../queries/users";
-import type { TimetableResource } from "../types";
+import type { TimetableFormValues, TimetableResource } from "../types";
+
+const defaultValue: TimetableFormValues = {
+  class: "",
+  days: [{ day: "Sunday", startTime: "", endTime: "", subject: "" }],
+};
 
 export default function Timetables() {
   const { data = [], isLoading, error } = useTimetablesQuery();
   const { data: classes = [], isLoading: isClassesLoading } = useClassesQuery();
-  const { data: subjects = [], isLoading: isSubjectsLoading } = useSubjectsQuery();
+  const { data: subjects = [], isLoading: isSubjectsLoading } =
+    useSubjectsQuery();
   const createTimetableMutation = useCreateTimetableMutation();
   const updateTimetableMutation = useUpdateTimetableMutation();
   const deleteTimetableMutation = useDeleteTimetableMutation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
-  const [viewingTimetable, setViewingTimetable] = useState<TimetableResource | null>(null);
-  const [editingTimetable, setEditingTimetable] = useState<TimetableResource | null>(null);
-  const [deletingTimetable, setDeletingTimetable] = useState<TimetableResource | null>(null);
+  const [viewingTimetable, setViewingTimetable] =
+    useState<TimetableResource | null>(null);
+  const [editingTimetable, setEditingTimetable] =
+    useState<TimetableResource | null>(null);
+  const [deletingTimetable, setDeletingTimetable] =
+    useState<TimetableResource | null>(null);
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [createValues, setCreateValues] = useState<TimetableFormValues>(defaultFormValues);
-  const [editValues, setEditValues] = useState<TimetableFormValues>(defaultFormValues);
+  const [createValues, setCreateValues] =
+    useState<TimetableFormValues>(defaultValue);
+  const [editValues, setEditValues] =
+    useState<TimetableFormValues>(defaultValue);
 
-  const classOptions = classes.map((item) => ({ id: item._id, title: item.title }));
-  const subjectOptions = subjects.map((item) => ({ id: item._id, title: item.title }));
-  const classLabelMap = new Map(classOptions.map((item) => [item.id, item.title]));
-  const subjectLabelMap = new Map(subjectOptions.map((item) => [item.id, item.title]));
+  const classOptions = classes.map((item) => ({
+    id: item._id,
+    title: item.title,
+  }));
+  const subjectOptions = subjects.map((item) => ({
+    id: item._id,
+    title: item.title,
+  }));
+  const classLabelMap = new Map(
+    classOptions.map((item) => [item.id, item.title]),
+  );
+  const subjectLabelMap = new Map(
+    subjectOptions.map((item) => [item.id, item.title]),
+  );
   const isOptionsLoading = isClassesLoading || isSubjectsLoading;
   const filteredTimetables = selectedClassId
     ? data.filter((item) => getRelatedId(item.class) === selectedClassId)
@@ -63,9 +83,11 @@ export default function Timetables() {
     setter((current) => ({ ...current, [key]: value }));
   }
 
-  function getInitialFormValues(timetable?: TimetableResource): TimetableFormValues {
+  function getInitialFormValues(
+    timetable?: TimetableResource,
+  ): TimetableFormValues {
     if (!timetable) {
-      return defaultFormValues;
+      return defaultValue;
     }
 
     return {
@@ -79,10 +101,13 @@ export default function Timetables() {
     };
   }
 
-  async function handleCreateSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleCreateSubmit(event: SubmitEvent) {
     event.preventDefault();
 
-    if (!createValues.class || createValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)) {
+    if (
+      !createValues.class ||
+      createValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)
+    ) {
       return;
     }
 
@@ -96,18 +121,21 @@ export default function Timetables() {
       })),
     });
 
-    setCreateValues(defaultFormValues);
+    setCreateValues(defaultValue);
     setIsCreateOpen(false);
   }
 
-  async function handleEditSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleEditSubmit(event: SubmitEvent) {
     event.preventDefault();
 
     if (!editingTimetable) {
       return;
     }
 
-    if (!editValues.class || editValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)) {
+    if (
+      !editValues.class ||
+      editValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)
+    ) {
       return;
     }
 
@@ -121,7 +149,7 @@ export default function Timetables() {
         endTime: slot.endTime.trim(),
       })),
     });
-    setEditValues(defaultFormValues);
+    setEditValues(defaultValue);
     setEditingTimetable(null);
   }
 
@@ -136,7 +164,7 @@ export default function Timetables() {
 
   function openCreateModal() {
     createTimetableMutation.reset();
-    setCreateValues(defaultFormValues);
+    setCreateValues(defaultValue);
     setIsCreateOpen(true);
   }
 
@@ -167,7 +195,9 @@ export default function Timetables() {
               <p className="mt-2 text-3xl font-semibold text-slate-950">
                 {data.length}
               </p>
-              <p className="mt-1 text-sm text-slate-600">Total timetable entries</p>
+              <p className="mt-1 text-sm text-slate-600">
+                Total timetable entries
+              </p>
             </div>
 
             <button
@@ -224,7 +254,10 @@ export default function Timetables() {
               <tbody className="divide-y divide-slate-200">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={2} className="px-3 py-6 text-sm text-slate-500">
+                    <td
+                      colSpan={2}
+                      className="px-3 py-6 text-sm text-slate-500"
+                    >
                       Loading...
                     </td>
                   </tr>
@@ -236,7 +269,10 @@ export default function Timetables() {
                   </tr>
                 ) : filteredTimetables.length === 0 ? (
                   <tr>
-                    <td colSpan={2} className="px-3 py-6 text-sm text-slate-500">
+                    <td
+                      colSpan={2}
+                      className="px-3 py-6 text-sm text-slate-500"
+                    >
                       {selectedClassId
                         ? "No timetable entries found for the selected class."
                         : "No timetable entries found."}
@@ -280,7 +316,7 @@ export default function Timetables() {
           onChange={(key, value) => updateFormValues("create", key, value)}
           onClose={() => {
             createTimetableMutation.reset();
-            setCreateValues(defaultFormValues);
+            setCreateValues(defaultValue);
             setIsCreateOpen(false);
           }}
           onSubmit={handleCreateSubmit}
@@ -299,7 +335,7 @@ export default function Timetables() {
           onChange={(key, value) => updateFormValues("edit", key, value)}
           onClose={() => {
             updateTimetableMutation.reset();
-            setEditValues(defaultFormValues);
+            setEditValues(defaultValue);
             setEditingTimetable(null);
           }}
           onSubmit={handleEditSubmit}
