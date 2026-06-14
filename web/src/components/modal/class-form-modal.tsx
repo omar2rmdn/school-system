@@ -1,16 +1,42 @@
-import type { ClassFormModalProps } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { ClassResource } from "../../types";
+import { useCreateClassMutation, useUpdateClassMutation } from "../../queries/classes";
+import { getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  resource?: ClassResource;
+  onClose: () => void;
+};
 
 export default function ClassFormModal({
-  mode,
-  titleValue,
-  errorMessage,
-  isSubmitting,
-  onChange,
+  resource,
   onClose,
-  onSubmit,
-}: ClassFormModalProps) {
-  const heading = mode === "create" ? "Add Class" : "Edit Class";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
+}: Props) {
+  const [title, setTitle] = useState(resource?.title || "");
+  
+  const createMutation = useCreateClassMutation();
+  const updateMutation = useUpdateClassMutation();
+  
+  const isEditing = !!resource;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Class" : "Add Class";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+
+    if (isEditing) {
+      await updateMutation.mutateAsync({ id: resource._id, title: trimmedTitle });
+    } else {
+      await createMutation.mutateAsync({ title: trimmedTitle });
+    }
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
@@ -31,7 +57,7 @@ export default function ClassFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label
               htmlFor="class-title"
@@ -41,8 +67,8 @@ export default function ClassFormModal({
             </label>
             <input
               id="class-title"
-              value={titleValue}
-              onChange={(event) => onChange(event.target.value)}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Class title"
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               autoFocus

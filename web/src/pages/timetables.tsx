@@ -1,35 +1,20 @@
-import { type SubmitEvent, useState } from "react";
+import { useState } from "react";
 import DeleteTimetableModal from "../components/modal/delete-timetable-modal";
 import TimetableDetailsModal from "../components/modal/timetable-details-modal";
 import TimetableFormModal from "../components/modal/timetable-form-modal";
-import {
-  getRelatedId,
-  getRelatedTitle,
-} from "../components/timetables/helpers";
+import { getRelatedId, getRelatedTitle } from "../utils/helpers";
 import { useClassesQuery } from "../queries/classes";
 import { useSubjectsQuery } from "../queries/subjects";
-import {
-  useCreateTimetableMutation,
-  useDeleteTimetableMutation,
-  useTimetablesQuery,
-  useUpdateTimetableMutation,
-} from "../queries/timetables";
+import { useTimetablesQuery } from "../queries/timetables";
 import { getQueryErrorMessage } from "../queries/users";
-import type { TimetableFormValues, TimetableResource } from "../types";
-
-const defaultValue: TimetableFormValues = {
-  class: "",
-  days: [{ day: "Sunday", startTime: "", endTime: "", subject: "" }],
-};
+import type { TimetableResource } from "../types";
+import { TimetableCard } from "../components/cards/timetable-card";
 
 export default function Timetables() {
   const { data = [], isLoading, error } = useTimetablesQuery();
   const { data: classes = [], isLoading: isClassesLoading } = useClassesQuery();
   const { data: subjects = [], isLoading: isSubjectsLoading } =
     useSubjectsQuery();
-  const createTimetableMutation = useCreateTimetableMutation();
-  const updateTimetableMutation = useUpdateTimetableMutation();
-  const deleteTimetableMutation = useDeleteTimetableMutation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [viewingTimetable, setViewingTimetable] =
@@ -39,10 +24,6 @@ export default function Timetables() {
   const [deletingTimetable, setDeletingTimetable] =
     useState<TimetableResource | null>(null);
   const [selectedClassId, setSelectedClassId] = useState("");
-  const [createValues, setCreateValues] =
-    useState<TimetableFormValues>(defaultValue);
-  const [editValues, setEditValues] =
-    useState<TimetableFormValues>(defaultValue);
 
   const classOptions = classes.map((item) => ({
     id: item._id,
@@ -64,119 +45,17 @@ export default function Timetables() {
     : data;
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
-  const createErrorMessage = createTimetableMutation.error
-    ? getQueryErrorMessage(createTimetableMutation.error)
-    : undefined;
-  const updateErrorMessage = updateTimetableMutation.error
-    ? getQueryErrorMessage(updateTimetableMutation.error)
-    : undefined;
-  const deleteErrorMessage = deleteTimetableMutation.error
-    ? getQueryErrorMessage(deleteTimetableMutation.error)
-    : undefined;
-
-  function updateFormValues(
-    mode: "create" | "edit",
-    key: keyof TimetableFormValues,
-    value: TimetableFormValues[keyof TimetableFormValues],
-  ) {
-    const setter = mode === "create" ? setCreateValues : setEditValues;
-    setter((current) => ({ ...current, [key]: value }));
-  }
-
-  function getInitialFormValues(
-    timetable?: TimetableResource,
-  ): TimetableFormValues {
-    if (!timetable) {
-      return defaultValue;
-    }
-
-    return {
-      class: getRelatedId(timetable.class),
-      days: timetable.days.map((slot) => ({
-        day: slot.day,
-        subject: getRelatedId(slot.subject),
-        startTime: slot.startTime,
-        endTime: slot.endTime,
-      })),
-    };
-  }
-
-  async function handleCreateSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (
-      !createValues.class ||
-      createValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)
-    ) {
-      return;
-    }
-
-    await createTimetableMutation.mutateAsync({
-      class: createValues.class,
-      days: createValues.days.map((slot) => ({
-        day: slot.day,
-        subject: slot.subject,
-        startTime: slot.startTime.trim(),
-        endTime: slot.endTime.trim(),
-      })),
-    });
-
-    setCreateValues(defaultValue);
-    setIsCreateOpen(false);
-  }
-
-  async function handleEditSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (!editingTimetable) {
-      return;
-    }
-
-    if (
-      !editValues.class ||
-      editValues.days.some((d) => !d.subject || !d.startTime || !d.endTime)
-    ) {
-      return;
-    }
-
-    await updateTimetableMutation.mutateAsync({
-      id: editingTimetable._id,
-      class: editValues.class,
-      days: editValues.days.map((slot) => ({
-        day: slot.day,
-        subject: slot.subject,
-        startTime: slot.startTime.trim(),
-        endTime: slot.endTime.trim(),
-      })),
-    });
-    setEditValues(defaultValue);
-    setEditingTimetable(null);
-  }
-
-  async function handleDeleteConfirm() {
-    if (!deletingTimetable) {
-      return;
-    }
-
-    await deleteTimetableMutation.mutateAsync(deletingTimetable._id);
-    setDeletingTimetable(null);
-  }
 
   function openCreateModal() {
-    createTimetableMutation.reset();
-    setCreateValues(defaultValue);
     setIsCreateOpen(true);
   }
 
   function openEditModal(timetable: TimetableResource) {
-    updateTimetableMutation.reset();
-    setEditValues(getInitialFormValues(timetable));
     setViewingTimetable(null);
     setEditingTimetable(timetable);
   }
 
   function openDeleteModal(timetable: TimetableResource) {
-    deleteTimetableMutation.reset();
     setViewingTimetable(null);
     setDeletingTimetable(timetable);
   }
@@ -280,22 +159,12 @@ export default function Timetables() {
                   </tr>
                 ) : (
                   filteredTimetables.map((timetable) => (
-                    <tr key={timetable._id}>
-                      <td className="px-3 py-4 text-sm font-medium text-slate-900">
-                        {getRelatedTitle(timetable.class, classLabelMap)}
-                      </td>
-                      <td className="px-3 py-4">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openViewModal(timetable)}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <TimetableCard
+                      key={timetable._id}
+                      timetable={timetable}
+                      classTitle={getRelatedTitle(timetable.class, classLabelMap)}
+                      onView={openViewModal}
+                    />
                   ))
                 )}
               </tbody>
@@ -306,39 +175,20 @@ export default function Timetables() {
 
       {isCreateOpen ? (
         <TimetableFormModal
-          mode="create"
-          values={createValues}
           classOptions={classOptions}
           subjectOptions={subjectOptions}
-          errorMessage={createErrorMessage}
-          isSubmitting={createTimetableMutation.isPending}
           isOptionsLoading={isOptionsLoading}
-          onChange={(key, value) => updateFormValues("create", key, value)}
-          onClose={() => {
-            createTimetableMutation.reset();
-            setCreateValues(defaultValue);
-            setIsCreateOpen(false);
-          }}
-          onSubmit={handleCreateSubmit}
+          onClose={() => setIsCreateOpen(false)}
         />
       ) : null}
 
       {editingTimetable ? (
         <TimetableFormModal
-          mode="edit"
-          values={editValues}
+          timetable={editingTimetable}
           classOptions={classOptions}
           subjectOptions={subjectOptions}
-          errorMessage={updateErrorMessage}
-          isSubmitting={updateTimetableMutation.isPending}
           isOptionsLoading={isOptionsLoading}
-          onChange={(key, value) => updateFormValues("edit", key, value)}
-          onClose={() => {
-            updateTimetableMutation.reset();
-            setEditValues(defaultValue);
-            setEditingTimetable(null);
-          }}
-          onSubmit={handleEditSubmit}
+          onClose={() => setEditingTimetable(null)}
         />
       ) : null}
 
@@ -355,14 +205,9 @@ export default function Timetables() {
 
       {deletingTimetable ? (
         <DeleteTimetableModal
+          timetable={deletingTimetable}
           classTitle={getRelatedTitle(deletingTimetable.class, classLabelMap)}
-          errorMessage={deleteErrorMessage}
-          isSubmitting={deleteTimetableMutation.isPending}
-          onClose={() => {
-            deleteTimetableMutation.reset();
-            setDeletingTimetable(null);
-          }}
-          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeletingTimetable(null)}
         />
       ) : null}
     </>

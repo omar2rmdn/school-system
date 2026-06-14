@@ -1,7 +1,16 @@
 import { useState } from "react";
-import { getRelatedTitle } from "../timetables/helpers";
+import { getRelatedTitle } from "../../utils/helpers";
 import { timetableDays } from "../../consts/index";
-import type { TimetableDay, TimetableDetailsModalProps } from "../../types";
+import type { TimetableDay, TimetableResource } from "../../types";
+
+export type Props = {
+  timetable: TimetableResource;
+  classTitle: string;
+  subjectLabelMap: Map<string, string>;
+  onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+};
 
 export default function TimetableDetailsModal({
   timetable,
@@ -10,7 +19,7 @@ export default function TimetableDetailsModal({
   onClose,
   onEdit,
   onDelete,
-}: TimetableDetailsModalProps) {
+}: Props) {
   const slotsByDay = timetableDays.map((day) => ({
     day,
     slots: timetable.days.filter((slot) => slot.day === day),

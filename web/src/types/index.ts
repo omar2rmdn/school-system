@@ -1,4 +1,4 @@
-import type { Dispatch, SetStateAction, SubmitEvent } from "react";
+import type { Dispatch, SetStateAction } from "react";
 
 type UserRole = "admin" | "parent" | "teacher" | "supervisor";
 
@@ -123,15 +123,6 @@ type TimetableMutationPayload = {
   }[];
 };
 
-type ProtectedProps = {
-  allowedRoles?: string[];
-};
-
-type SectionPageProps = {
-  title: string;
-  description: string;
-};
-
 type TeachingResource = ClassResource | SubjectResource;
 type RelatedResource = ClassResource | SubjectResource;
 
@@ -188,237 +179,29 @@ type TimetableFormValues = {
   days: DaySlot[];
 };
 
-type AdminFormModalProps = {
-  mode: "create" | "edit";
-  values: AdminFormValues;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onValuesChange: (values: AdminFormValues) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type ParentFormModalProps = {
-  mode: "create" | "edit";
-  values: ParentFormValues;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onValuesChange: (values: ParentFormValues) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type SupervisorFormModalProps = {
-  mode: "create" | "edit";
-  values: SupervisorFormValues;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onValuesChange: (values: SupervisorFormValues) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type TeacherFormModalProps = {
-  mode: "create" | "edit";
-  values: TeacherFormValues;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  classOptions: ClassResource[];
-  subjectOptions: SubjectResource[];
-  isOptionsLoading: boolean;
-  onValuesChange: (values: TeacherFormValues) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type StudentFormModalProps = {
-  mode: "create" | "edit";
-  values: StudentFormValues;
-  classOptions: { id: string; title: string }[];
-  errorMessage?: string;
-  isSubmitting: boolean;
-  isOptionsLoading: boolean;
-  onChange: <K extends keyof StudentFormValues>(
-    key: K,
-    value: StudentFormValues[K],
-  ) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type ClassFormModalProps = {
-  mode: "create" | "edit";
-  titleValue: string;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onChange: (value: string) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type SubjectFormModalProps = {
-  mode: "create" | "edit";
-  titleValue: string;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onChange: (value: string) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type EventFormModalProps = {
-  mode: "create" | "edit";
-  titleValue: string;
-  descriptionValue: string;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onTitleChange: (value: string) => void;
-  onDescriptionChange: (value: string) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type DeleteAdminModalProps = {
-  admin: User;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteParentModalProps = {
-  parent: User;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteTeacherModalProps = {
-  teacher: User;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteSupervisorModalProps = {
-  supervisor: User;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteStudentModalProps = {
-  student: Student;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteClassModalProps = {
-  resource: ClassResource;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteSubjectModalProps = {
-  resource: SubjectResource;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type DeleteEventModalProps = {
-  resource: EventResource;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type TimetableFormModalProps = {
-  mode: "create" | "edit";
-  values: TimetableFormValues;
-  classOptions: { id: string; title: string }[];
-  subjectOptions: { id: string; title: string }[];
-  errorMessage?: string;
-  isSubmitting: boolean;
-  isOptionsLoading: boolean;
-  onChange: <K extends keyof TimetableFormValues>(
-    key: K,
-    value: TimetableFormValues[K],
-  ) => void;
-  onClose: () => void;
-  onSubmit: (event: SubmitEvent) => void;
-};
-
-type DeleteTimetableModalProps = {
-  classTitle: string;
-  errorMessage?: string;
-  isSubmitting: boolean;
-  onClose: () => void;
-  onConfirm: () => void;
-};
-
-type TimetableDetailsModalProps = {
-  timetable: TimetableResource;
-  classTitle: string;
-  subjectLabelMap: Map<string, string>;
-  onClose: () => void;
-  onEdit: () => void;
-  onDelete: () => void;
-};
-
 export type {
   AuthState,
   AuthContextType,
   AuthSetter,
-  AdminFormModalProps,
   AdminFormValues,
-  ClassFormModalProps,
   ClassResource,
   ClassesResponse,
   DaySlot,
-  DeleteAdminModalProps,
-  DeleteClassModalProps,
-  DeleteEventModalProps,
-  DeleteParentModalProps,
-  DeleteStudentModalProps,
-  DeleteSubjectModalProps,
-  DeleteSupervisorModalProps,
-  DeleteTeacherModalProps,
-  DeleteTimetableModalProps,
-  EventFormModalProps,
   EventMutationPayload,
   EventResource,
   EventsResponse,
-  ParentFormModalProps,
   ParentFormValues,
-  ProtectedProps,
   RelatedResource,
-  SectionPageProps,
   Student,
-  StudentFormModalProps,
   StudentFormValues,
   StudentMutationPayload,
   StudentsResponse,
-  SubjectFormModalProps,
   SubjectResource,
   SubjectsResponse,
-  SupervisorFormModalProps,
   SupervisorFormValues,
-  TeacherFormModalProps,
   TeacherFormValues,
   TeachingResource,
   TimetableDay,
-  TimetableDetailsModalProps,
-  TimetableFormModalProps,
   TimetableFormValues,
   TimetableMutationPayload,
   TimetableResource,

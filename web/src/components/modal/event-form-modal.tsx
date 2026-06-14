@@ -1,18 +1,48 @@
-import type { EventFormModalProps } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { EventResource } from "../../types";
+import { useCreateEventMutation, useUpdateEventMutation } from "../../queries/events";
+import { getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  resource?: EventResource;
+  onClose: () => void;
+};
 
 export default function EventFormModal({
-  mode,
-  titleValue,
-  descriptionValue,
-  errorMessage,
-  isSubmitting,
-  onTitleChange,
-  onDescriptionChange,
+  resource,
   onClose,
-  onSubmit,
-}: EventFormModalProps) {
-  const heading = mode === "create" ? "Add Event" : "Edit Event";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
+}: Props) {
+  const [title, setTitle] = useState(resource?.title || "");
+  const [description, setDescription] = useState(resource?.description || "");
+
+  const createMutation = useCreateEventMutation();
+  const updateMutation = useUpdateEventMutation();
+
+  const isEditing = !!resource;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Event" : "Add Event";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmedTitle = title.trim();
+    const trimmedDescription = description.trim();
+    if (!trimmedTitle || !trimmedDescription) return;
+
+    if (isEditing) {
+      await updateMutation.mutateAsync({
+        id: resource._id,
+        title: trimmedTitle,
+        description: trimmedDescription,
+      });
+    } else {
+      await createMutation.mutateAsync({ title: trimmedTitle, description: trimmedDescription });
+    }
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
@@ -33,7 +63,7 @@ export default function EventFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label
               htmlFor="event-title"
@@ -43,8 +73,8 @@ export default function EventFormModal({
             </label>
             <input
               id="event-title"
-              value={titleValue}
-              onChange={(event) => onTitleChange(event.target.value)}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Event title"
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               autoFocus
@@ -60,8 +90,8 @@ export default function EventFormModal({
             </label>
             <textarea
               id="event-description"
-              value={descriptionValue}
-              onChange={(event) => onDescriptionChange(event.target.value)}
+              value={description}
+              onChange={(event) => setDescription(event.target.value)}
               placeholder="Event description"
               rows={5}
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"

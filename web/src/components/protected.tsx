@@ -1,8 +1,11 @@
 import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../store/auth/context";
-import type { ProtectedProps } from "../types";
 
-export function Protected({ allowedRoles }: ProtectedProps) {
+export type Props = {
+  allowedRoles: string[];
+};
+
+export function Protected({ allowedRoles }: Props) {
   const { auth, isReady } = useAuth();
 
   if (!isReady) {

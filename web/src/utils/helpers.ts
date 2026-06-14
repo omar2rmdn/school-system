@@ -1,4 +1,4 @@
-import type { RelatedResource } from "../../types";
+import type { RelatedResource } from "../types";
 
 function getRelatedTitle(
   resource: string | RelatedResource,

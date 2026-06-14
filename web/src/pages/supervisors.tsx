@@ -1,6 +1,6 @@
-import { type SubmitEvent, useState } from "react";
+import { useState } from "react";
 import DeleteSupervisorModal from "../components/modal/delete-supervisor-modal";
-import SupervisorFormModal from "../components/modal/supervisor-form-modal";
+import SupervisorFormModal, { emptySupervisorFormValues } from "../components/modal/supervisor-form-modal";
 import {
   getQueryErrorMessage,
   useCreateUserMutation,
@@ -9,14 +9,7 @@ import {
   useUsersQuery,
 } from "../queries/users";
 import type { SupervisorFormValues, User } from "../types";
-
-const emptyForm: SupervisorFormValues = {
-  firstName: "",
-  lastName: "",
-  email: "",
-  phone: "",
-  password: "",
-};
+import { SupervisorCard } from "../components/cards/supervisor-card";
 
 export default function Supervisors() {
   const {
@@ -33,9 +26,6 @@ export default function Supervisors() {
   const [deletingSupervisor, setDeletingSupervisor] = useState<User | null>(
     null,
   );
-  const [createValues, setCreateValues] =
-    useState<SupervisorFormValues>(emptyForm);
-  const [editValues, setEditValues] = useState<SupervisorFormValues>(emptyForm);
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
   const createErrorMessage = createSupervisorMutation.error
@@ -48,14 +38,12 @@ export default function Supervisors() {
     ? getQueryErrorMessage(deleteSupervisorMutation.error)
     : undefined;
 
-  async function handleCreateSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    const firstName = createValues.firstName.trim();
-    const lastName = createValues.lastName.trim();
-    const email = createValues.email.trim();
-    const phone = createValues.phone.trim();
-    const password = createValues.password.trim();
+  async function handleCreateSubmit(values: SupervisorFormValues) {
+    const firstName = values.firstName.trim();
+    const lastName = values.lastName.trim();
+    const email = values.email.trim();
+    const phone = values.phone.trim();
+    const password = values.password.trim();
 
     if (!firstName || !lastName || !email || !phone || !password) {
       return;
@@ -69,22 +57,19 @@ export default function Supervisors() {
       password,
       role: "supervisor",
     });
-    setCreateValues(emptyForm);
     setIsCreateOpen(false);
   }
 
-  async function handleEditSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
+  async function handleEditSubmit(values: SupervisorFormValues) {
     if (!editingSupervisor) {
       return;
     }
 
-    const firstName = editValues.firstName.trim();
-    const lastName = editValues.lastName.trim();
-    const email = editValues.email.trim();
-    const phone = editValues.phone.trim();
-    const password = editValues.password.trim();
+    const firstName = values.firstName.trim();
+    const lastName = values.lastName.trim();
+    const email = values.email.trim();
+    const phone = values.phone.trim();
+    const password = values.password.trim();
 
     if (!firstName || !lastName || !email || !phone) {
       return;
@@ -99,7 +84,6 @@ export default function Supervisors() {
       role: "supervisor",
       ...(password ? { password } : {}),
     });
-    setEditValues(emptyForm);
     setEditingSupervisor(null);
   }
 
@@ -129,7 +113,6 @@ export default function Supervisors() {
               type="button"
               onClick={() => {
                 createSupervisorMutation.reset();
-                setCreateValues(emptyForm);
                 setIsCreateOpen(true);
               }}
               className="rounded-xl bg-slate-950 px-4 py-2.5 text-sm font-medium text-white hover:bg-slate-800"
@@ -188,51 +171,18 @@ export default function Supervisors() {
                   </tr>
                 ) : (
                   supervisors.map((supervisor) => (
-                    <tr key={supervisor._id}>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {supervisor.firstName} {supervisor.lastName}
-                      </td>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {supervisor.role}
-                      </td>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {supervisor.email}
-                      </td>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {supervisor.phone}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => {
-                              updateSupervisorMutation.reset();
-                              setEditValues({
-                                firstName: supervisor.firstName,
-                                lastName: supervisor.lastName,
-                                email: supervisor.email,
-                                phone: supervisor.phone,
-                                password: "",
-                              });
-                              setEditingSupervisor(supervisor);
-                            }}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => {
-                              deleteSupervisorMutation.reset();
-                              setDeletingSupervisor(supervisor);
-                            }}
-                            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <SupervisorCard
+                      key={supervisor._id}
+                      supervisor={supervisor}
+                      onEdit={(sup) => {
+                        updateSupervisorMutation.reset();
+                        setEditingSupervisor(sup);
+                      }}
+                      onDelete={(sup) => {
+                        deleteSupervisorMutation.reset();
+                        setDeletingSupervisor(sup);
+                      }}
+                    />
                   ))
                 )}
               </tbody>
@@ -244,13 +194,11 @@ export default function Supervisors() {
       {isCreateOpen ? (
         <SupervisorFormModal
           mode="create"
-          values={createValues}
+          initialValues={emptySupervisorFormValues}
           errorMessage={createErrorMessage}
           isSubmitting={createSupervisorMutation.isPending}
-          onValuesChange={setCreateValues}
           onClose={() => {
             createSupervisorMutation.reset();
-            setCreateValues(emptyForm);
             setIsCreateOpen(false);
           }}
           onSubmit={handleCreateSubmit}
@@ -260,13 +208,17 @@ export default function Supervisors() {
       {editingSupervisor ? (
         <SupervisorFormModal
           mode="edit"
-          values={editValues}
+          initialValues={{
+            firstName: editingSupervisor.firstName,
+            lastName: editingSupervisor.lastName,
+            email: editingSupervisor.email,
+            phone: editingSupervisor.phone,
+            password: "",
+          }}
           errorMessage={updateErrorMessage}
           isSubmitting={updateSupervisorMutation.isPending}
-          onValuesChange={setEditValues}
           onClose={() => {
             updateSupervisorMutation.reset();
-            setEditValues(emptyForm);
             setEditingSupervisor(null);
           }}
           onSubmit={handleEditSubmit}

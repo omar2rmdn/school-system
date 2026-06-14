@@ -1,16 +1,42 @@
-import type { SubjectFormModalProps } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { SubjectResource } from "../../types";
+import { useCreateSubjectMutation, useUpdateSubjectMutation } from "../../queries/subjects";
+import { getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  resource?: SubjectResource;
+  onClose: () => void;
+};
 
 export default function SubjectFormModal({
-  mode,
-  titleValue,
-  errorMessage,
-  isSubmitting,
-  onChange,
+  resource,
   onClose,
-  onSubmit,
-}: SubjectFormModalProps) {
-  const heading = mode === "create" ? "Add Subject" : "Edit Subject";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
+}: Props) {
+  const [title, setTitle] = useState(resource?.title || "");
+
+  const createMutation = useCreateSubjectMutation();
+  const updateMutation = useUpdateSubjectMutation();
+
+  const isEditing = !!resource;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Subject" : "Add Subject";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmedTitle = title.trim();
+    if (!trimmedTitle) return;
+
+    if (isEditing) {
+      await updateMutation.mutateAsync({ id: resource._id, title: trimmedTitle });
+    } else {
+      await createMutation.mutateAsync({ title: trimmedTitle });
+    }
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
@@ -31,7 +57,7 @@ export default function SubjectFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div>
             <label
               htmlFor="subject-title"
@@ -41,8 +67,8 @@ export default function SubjectFormModal({
             </label>
             <input
               id="subject-title"
-              value={titleValue}
-              onChange={(event) => onChange(event.target.value)}
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
               placeholder="Subject title"
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               autoFocus

@@ -1,4 +1,12 @@
-import type { DeleteSupervisorModalProps } from "../../types";
+import type { User } from "../../types";
+
+export type Props = {
+  supervisor: User;
+  errorMessage?: string;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onConfirm: () => void;
+};
 
 export default function DeleteSupervisorModal({
   supervisor,
@@ -6,7 +14,7 @@ export default function DeleteSupervisorModal({
   isSubmitting,
   onClose,
   onConfirm,
-}: DeleteSupervisorModalProps) {
+}: Props) {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
       <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">

@@ -1,4 +1,14 @@
-import type { SupervisorFormModalProps, SupervisorFormValues } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { SupervisorFormValues } from "../../types";
+
+export type Props = {
+  mode: "create" | "edit";
+  initialValues: SupervisorFormValues;
+  errorMessage?: string;
+  isSubmitting: boolean;
+  onClose: () => void;
+  onSubmit: (values: SupervisorFormValues) => void;
+};
 
 const emptySupervisorFormValues: SupervisorFormValues = {
   firstName: "",
@@ -10,13 +20,19 @@ const emptySupervisorFormValues: SupervisorFormValues = {
 
 export default function SupervisorFormModal({
   mode,
-  values,
+  initialValues,
   errorMessage,
   isSubmitting,
-  onValuesChange,
   onClose,
   onSubmit,
-}: SupervisorFormModalProps) {
+}: Props) {
+  const [values, setValues] = useState<SupervisorFormValues>(initialValues);
+
+  function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    onSubmit(values);
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
@@ -38,7 +54,7 @@ export default function SupervisorFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
@@ -51,7 +67,7 @@ export default function SupervisorFormModal({
                 id={`supervisor-${mode}-first-name`}
                 value={values.firstName}
                 onChange={(event) =>
-                  onValuesChange({ ...values, firstName: event.target.value })
+                  setValues({ ...values, firstName: event.target.value })
                 }
                 placeholder="First name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -70,7 +86,7 @@ export default function SupervisorFormModal({
                 id={`supervisor-${mode}-last-name`}
                 value={values.lastName}
                 onChange={(event) =>
-                  onValuesChange({ ...values, lastName: event.target.value })
+                  setValues({ ...values, lastName: event.target.value })
                 }
                 placeholder="Last name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -89,7 +105,7 @@ export default function SupervisorFormModal({
                 type="email"
                 value={values.email}
                 onChange={(event) =>
-                  onValuesChange({ ...values, email: event.target.value })
+                  setValues({ ...values, email: event.target.value })
                 }
                 placeholder="Email address"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -107,7 +123,7 @@ export default function SupervisorFormModal({
                 id={`supervisor-${mode}-phone`}
                 value={values.phone}
                 onChange={(event) =>
-                  onValuesChange({ ...values, phone: event.target.value })
+                  setValues({ ...values, phone: event.target.value })
                 }
                 placeholder="Phone number"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -127,9 +143,13 @@ export default function SupervisorFormModal({
               type="password"
               value={values.password}
               onChange={(event) =>
-                onValuesChange({ ...values, password: event.target.value })
+                setValues({ ...values, password: event.target.value })
               }
-              placeholder={mode === "create" ? "Password" : "Leave blank to keep current password"}
+              placeholder={
+                mode === "create"
+                  ? "Password"
+                  : "Leave blank to keep current password"
+              }
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
             />
           </div>
@@ -151,7 +171,11 @@ export default function SupervisorFormModal({
               disabled={isSubmitting}
               className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Save Changes"}
+              {isSubmitting
+                ? "Saving..."
+                : mode === "create"
+                  ? "Create"
+                  : "Save Changes"}
             </button>
           </div>
         </form>

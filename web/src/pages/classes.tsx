@@ -1,93 +1,31 @@
-import { type SubmitEvent, useState } from "react";
+import { useState } from "react";
 import ClassFormModal from "../components/modal/class-form-modal";
 import DeleteClassModal from "../components/modal/delete-class-modal";
 import type { ClassResource } from "../types";
-import {
-  useClassesQuery,
-  useCreateClassMutation,
-  useDeleteClassMutation,
-  useUpdateClassMutation,
-} from "../queries/classes";
+import { useClassesQuery } from "../queries/classes";
 import { getQueryErrorMessage } from "../queries/users";
+import { ClassCard } from "../components/cards/class-card";
 
 export default function Classes() {
   const { data = [], isLoading, error } = useClassesQuery();
-  const createClassMutation = useCreateClassMutation();
-  const updateClassMutation = useUpdateClassMutation();
-  const deleteClassMutation = useDeleteClassMutation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingClass, setEditingClass] = useState<ClassResource | null>(null);
   const [deletingClass, setDeletingClass] = useState<ClassResource | null>(
     null,
   );
-  const [createTitle, setCreateTitle] = useState("");
-  const [editTitle, setEditTitle] = useState("");
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
-  const createErrorMessage = createClassMutation.error
-    ? getQueryErrorMessage(createClassMutation.error)
-    : undefined;
-  const updateErrorMessage = updateClassMutation.error
-    ? getQueryErrorMessage(updateClassMutation.error)
-    : undefined;
-  const deleteErrorMessage = deleteClassMutation.error
-    ? getQueryErrorMessage(deleteClassMutation.error)
-    : undefined;
-
-  async function handleCreateSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    const title = createTitle.trim();
-    if (!title) {
-      return;
-    }
-
-    await createClassMutation.mutateAsync({ title });
-    setCreateTitle("");
-    setIsCreateOpen(false);
-  }
-
-  async function handleEditSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (!editingClass) {
-      return;
-    }
-
-    const title = editTitle.trim();
-    if (!title) {
-      return;
-    }
-
-    await updateClassMutation.mutateAsync({ id: editingClass._id, title });
-    setEditTitle("");
-    setEditingClass(null);
-  }
-
-  async function handleDeleteConfirm() {
-    if (!deletingClass) {
-      return;
-    }
-
-    await deleteClassMutation.mutateAsync(deletingClass._id);
-    setDeletingClass(null);
-  }
 
   function openCreateModal() {
-    createClassMutation.reset();
-    setCreateTitle("");
     setIsCreateOpen(true);
   }
 
   function openEditModal(resource: ClassResource) {
-    updateClassMutation.reset();
-    setEditTitle(resource.title);
     setEditingClass(resource);
   }
 
   function openDeleteModal(resource: ClassResource) {
-    deleteClassMutation.reset();
     setDeletingClass(resource);
   }
 
@@ -154,29 +92,12 @@ export default function Classes() {
                   </tr>
                 ) : (
                   data.map((resource) => (
-                    <tr key={resource._id}>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {resource.title}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(resource)}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(resource)}
-                            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <ClassCard
+                      key={resource._id}
+                      resource={resource}
+                      onEdit={openEditModal}
+                      onDelete={openDeleteModal}
+                    />
                   ))
                 )}
               </tbody>
@@ -185,50 +106,23 @@ export default function Classes() {
         </div>
       </section>
 
-      {isCreateOpen ? (
-        <ClassFormModal
-          mode="create"
-          titleValue={createTitle}
-          errorMessage={createErrorMessage}
-          isSubmitting={createClassMutation.isPending}
-          onChange={setCreateTitle}
-          onClose={() => {
-            createClassMutation.reset();
-            setCreateTitle("");
-            setIsCreateOpen(false);
-          }}
-          onSubmit={handleCreateSubmit}
-        />
-      ) : null}
+      {isCreateOpen && (
+        <ClassFormModal onClose={() => setIsCreateOpen(false)} />
+      )}
 
-      {editingClass ? (
+      {editingClass && (
         <ClassFormModal
-          mode="edit"
-          titleValue={editTitle}
-          errorMessage={updateErrorMessage}
-          isSubmitting={updateClassMutation.isPending}
-          onChange={setEditTitle}
-          onClose={() => {
-            updateClassMutation.reset();
-            setEditTitle("");
-            setEditingClass(null);
-          }}
-          onSubmit={handleEditSubmit}
+          resource={editingClass}
+          onClose={() => setEditingClass(null)}
         />
-      ) : null}
+      )}
 
-      {deletingClass ? (
+      {deletingClass && (
         <DeleteClassModal
           resource={deletingClass}
-          errorMessage={deleteErrorMessage}
-          isSubmitting={deleteClassMutation.isPending}
-          onClose={() => {
-            deleteClassMutation.reset();
-            setDeletingClass(null);
-          }}
-          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeletingClass(null)}
         />
-      ) : null}
+      )}
     </>
   );
 }

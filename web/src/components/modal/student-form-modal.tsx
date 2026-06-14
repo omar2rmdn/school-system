@@ -1,4 +1,14 @@
-import type { StudentFormModalProps, StudentFormValues } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { StudentFormValues, Student, ClassResource } from "../../types";
+import { useCreateStudentMutation, useUpdateStudentMutation } from "../../queries/students";
+import { getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  student?: Student;
+  classOptions: { id: string; title: string }[];
+  isOptionsLoading: boolean;
+  onClose: () => void;
+};
 
 const defaultStudentFormValues: StudentFormValues = {
   firstName: "",
@@ -7,19 +17,72 @@ const defaultStudentFormValues: StudentFormValues = {
   parentPhone: "",
 };
 
+function getStudentClassId(student: { class?: string | ClassResource }) {
+  if (!student.class) {
+    return "";
+  }
+  return typeof student.class === "object" ? student.class._id : student.class;
+}
+
+function getParentPhone(student: { parentPhone?: string; phone?: string }) {
+  return student.parentPhone || student.phone || "-";
+}
+
+function getInitialFormValues(student?: Student): StudentFormValues {
+  if (!student) {
+    return defaultStudentFormValues;
+  }
+  return {
+    firstName: student.firstName,
+    lastName: student.lastName,
+    class: getStudentClassId(student),
+    parentPhone: getParentPhone(student) === "-" ? "" : getParentPhone(student),
+  };
+}
+
 export default function StudentFormModal({
-  mode,
-  values,
+  student,
   classOptions,
-  errorMessage,
-  isSubmitting,
   isOptionsLoading,
-  onChange,
   onClose,
-  onSubmit,
-}: StudentFormModalProps) {
-  const heading = mode === "create" ? "Add Student" : "Edit Student";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
+}: Props) {
+  const [values, setValues] = useState<StudentFormValues>(getInitialFormValues(student));
+
+  const createMutation = useCreateStudentMutation();
+  const updateMutation = useUpdateStudentMutation();
+
+  const isEditing = !!student;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Student" : "Add Student";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    
+    const payload = {
+      firstName: values.firstName.trim(),
+      lastName: values.lastName.trim(),
+      class: values.class,
+      parentPhone: values.parentPhone.trim(),
+    };
+
+    if (!payload.firstName || !payload.lastName || !payload.class || !payload.parentPhone) {
+      return;
+    }
+
+    if (isEditing) {
+      await updateMutation.mutateAsync({
+        id: student._id,
+        ...payload,
+      });
+    } else {
+      await createMutation.mutateAsync(payload);
+    }
+    onClose();
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
@@ -40,7 +103,7 @@ export default function StudentFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
@@ -52,7 +115,9 @@ export default function StudentFormModal({
               <input
                 id="student-first-name"
                 value={values.firstName}
-                onChange={(event) => onChange("firstName", event.target.value)}
+                onChange={(event) =>
+                  setValues({ ...values, firstName: event.target.value })
+                }
                 placeholder="First name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
                 autoFocus
@@ -69,7 +134,9 @@ export default function StudentFormModal({
               <input
                 id="student-last-name"
                 value={values.lastName}
-                onChange={(event) => onChange("lastName", event.target.value)}
+                onChange={(event) =>
+                  setValues({ ...values, lastName: event.target.value })
+                }
                 placeholder="Last name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               />
@@ -85,7 +152,9 @@ export default function StudentFormModal({
               <select
                 id="student-class"
                 value={values.class}
-                onChange={(event) => onChange("class", event.target.value)}
+                onChange={(event) =>
+                  setValues({ ...values, class: event.target.value })
+                }
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               >
                 <option value="">Select a class</option>
@@ -107,7 +176,9 @@ export default function StudentFormModal({
               <input
                 id="student-parent-phone"
                 value={values.parentPhone}
-                onChange={(event) => onChange("parentPhone", event.target.value)}
+                onChange={(event) =>
+                  setValues({ ...values, parentPhone: event.target.value })
+                }
                 placeholder="Parent phone"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
               />

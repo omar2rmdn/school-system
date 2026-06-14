@@ -1,20 +1,13 @@
-import { type SubmitEvent, useState } from "react";
+import { useState } from "react";
 import DeleteSubjectModal from "../components/modal/delete-subject-modal";
 import SubjectFormModal from "../components/modal/subject-form-modal";
 import type { SubjectResource } from "../types";
-import {
-  useCreateSubjectMutation,
-  useDeleteSubjectMutation,
-  useSubjectsQuery,
-  useUpdateSubjectMutation,
-} from "../queries/subjects";
+import { useSubjectsQuery } from "../queries/subjects";
 import { getQueryErrorMessage } from "../queries/users";
+import { SubjectCard } from "../components/cards/subject-card";
 
 export default function Subjects() {
   const { data = [], isLoading, error } = useSubjectsQuery();
-  const createSubjectMutation = useCreateSubjectMutation();
-  const updateSubjectMutation = useUpdateSubjectMutation();
-  const deleteSubjectMutation = useDeleteSubjectMutation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<SubjectResource | null>(
@@ -22,73 +15,18 @@ export default function Subjects() {
   );
   const [deletingSubject, setDeletingSubject] =
     useState<SubjectResource | null>(null);
-  const [createTitle, setCreateTitle] = useState("");
-  const [editTitle, setEditTitle] = useState("");
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
-  const createErrorMessage = createSubjectMutation.error
-    ? getQueryErrorMessage(createSubjectMutation.error)
-    : undefined;
-  const updateErrorMessage = updateSubjectMutation.error
-    ? getQueryErrorMessage(updateSubjectMutation.error)
-    : undefined;
-  const deleteErrorMessage = deleteSubjectMutation.error
-    ? getQueryErrorMessage(deleteSubjectMutation.error)
-    : undefined;
-
-  async function handleCreateSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    const title = createTitle.trim();
-    if (!title) {
-      return;
-    }
-
-    await createSubjectMutation.mutateAsync({ title });
-    setCreateTitle("");
-    setIsCreateOpen(false);
-  }
-
-  async function handleEditSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (!editingSubject) {
-      return;
-    }
-
-    const title = editTitle.trim();
-    if (!title) {
-      return;
-    }
-
-    await updateSubjectMutation.mutateAsync({ id: editingSubject._id, title });
-    setEditTitle("");
-    setEditingSubject(null);
-  }
-
-  async function handleDeleteConfirm() {
-    if (!deletingSubject) {
-      return;
-    }
-
-    await deleteSubjectMutation.mutateAsync(deletingSubject._id);
-    setDeletingSubject(null);
-  }
 
   function openCreateModal() {
-    createSubjectMutation.reset();
-    setCreateTitle("");
     setIsCreateOpen(true);
   }
 
   function openEditModal(resource: SubjectResource) {
-    updateSubjectMutation.reset();
-    setEditTitle(resource.title);
     setEditingSubject(resource);
   }
 
   function openDeleteModal(resource: SubjectResource) {
-    deleteSubjectMutation.reset();
     setDeletingSubject(resource);
   }
 
@@ -155,29 +93,12 @@ export default function Subjects() {
                   </tr>
                 ) : (
                   data.map((resource) => (
-                    <tr key={resource._id}>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {resource.title}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(resource)}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(resource)}
-                            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <SubjectCard
+                      key={resource._id}
+                      resource={resource}
+                      onEdit={openEditModal}
+                      onDelete={openDeleteModal}
+                    />
                   ))
                 )}
               </tbody>
@@ -188,46 +109,21 @@ export default function Subjects() {
 
       {isCreateOpen ? (
         <SubjectFormModal
-          mode="create"
-          titleValue={createTitle}
-          errorMessage={createErrorMessage}
-          isSubmitting={createSubjectMutation.isPending}
-          onChange={setCreateTitle}
-          onClose={() => {
-            createSubjectMutation.reset();
-            setCreateTitle("");
-            setIsCreateOpen(false);
-          }}
-          onSubmit={handleCreateSubmit}
+          onClose={() => setIsCreateOpen(false)}
         />
       ) : null}
 
       {editingSubject ? (
         <SubjectFormModal
-          mode="edit"
-          titleValue={editTitle}
-          errorMessage={updateErrorMessage}
-          isSubmitting={updateSubjectMutation.isPending}
-          onChange={setEditTitle}
-          onClose={() => {
-            updateSubjectMutation.reset();
-            setEditTitle("");
-            setEditingSubject(null);
-          }}
-          onSubmit={handleEditSubmit}
+          resource={editingSubject}
+          onClose={() => setEditingSubject(null)}
         />
       ) : null}
 
       {deletingSubject ? (
         <DeleteSubjectModal
           resource={deletingSubject}
-          errorMessage={deleteErrorMessage}
-          isSubmitting={deleteSubjectMutation.isPending}
-          onClose={() => {
-            deleteSubjectMutation.reset();
-            setDeletingSubject(null);
-          }}
-          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeletingSubject(null)}
         />
       ) : null}
     </>

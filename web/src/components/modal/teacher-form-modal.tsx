@@ -1,4 +1,20 @@
-import type { TeacherFormModalProps, TeacherFormValues } from "../../types";
+import { useState, type FormEvent } from "react";
+import type {
+  TeacherFormValues,
+  ClassResource,
+  SubjectResource,
+  TeachingResource,
+  User,
+} from "../../types";
+import { useCreateUserMutation, useUpdateUserMutation, getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  teacher?: User;
+  classOptions: ClassResource[];
+  subjectOptions: SubjectResource[];
+  isOptionsLoading: boolean;
+  onClose: () => void;
+};
 
 const emptyTeacherFormValues: TeacherFormValues = {
   firstName: "",
@@ -16,25 +32,107 @@ function toggleSelection(values: string[], value: string) {
     : [...values, value];
 }
 
+function getResourceIds(
+  values: string[] | undefined,
+  resources: TeachingResource[],
+) {
+  if (!values || values.length === 0) {
+    return [];
+  }
+
+  return values
+    .map((value) => {
+      const matchById = resources.find((resource) => resource._id === value);
+      if (matchById) {
+        return matchById._id;
+      }
+
+      const matchByTitle = resources.find(
+        (resource) => resource.title === value,
+      );
+      return matchByTitle?._id;
+    })
+    .filter((value): value is string => Boolean(value));
+}
+
 export default function TeacherFormModal({
-  mode,
-  values,
-  errorMessage,
-  isSubmitting,
+  teacher,
   classOptions,
   subjectOptions,
   isOptionsLoading,
-  onValuesChange,
   onClose,
-  onSubmit,
-}: TeacherFormModalProps) {
+}: Props) {
+  const [values, setValues] = useState<TeacherFormValues>(() => {
+    if (teacher) {
+      return {
+        firstName: teacher.firstName,
+        lastName: teacher.lastName,
+        email: teacher.email,
+        phone: teacher.phone || "",
+        password: "",
+        classes: getResourceIds(teacher.classes, classOptions),
+        subjects: getResourceIds(teacher.subjects, subjectOptions),
+      };
+    }
+    return emptyTeacherFormValues;
+  });
+
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+
+  const isEditing = !!teacher;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Teacher" : "Add Teacher";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    
+    const firstName = values.firstName.trim();
+    const lastName = values.lastName.trim();
+    const email = values.email.trim();
+    const phone = values.phone.trim();
+    const password = values.password.trim();
+
+    if (isEditing) {
+      if (!firstName || !lastName || !email || !phone) return;
+      await updateMutation.mutateAsync({
+        id: teacher._id,
+        firstName,
+        lastName,
+        email,
+        phone,
+        role: "teacher",
+        classes: getResourceIds(values.classes, classOptions),
+        subjects: getResourceIds(values.subjects, subjectOptions),
+        ...(password ? { password } : {}),
+      });
+    } else {
+      if (!firstName || !lastName || !email || !phone || !password) return;
+      await createMutation.mutateAsync({
+        firstName,
+        lastName,
+        email,
+        phone,
+        password,
+        role: "teacher",
+        classes: getResourceIds(values.classes, classOptions),
+        subjects: getResourceIds(values.subjects, subjectOptions),
+      });
+    }
+    onClose();
+  }
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/40 px-4">
       <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold text-slate-950">
-              {mode === "create" ? "Add Teacher" : "Edit Teacher"}
+              {heading}
             </h2>
             <p className="mt-1 text-sm text-slate-500">
               Enter the teacher details.
@@ -49,20 +147,20 @@ export default function TeacherFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-4">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label
-                htmlFor={`teacher-${mode}-first-name`}
+                htmlFor="teacher-first-name"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
                 First Name
               </label>
               <input
-                id={`teacher-${mode}-first-name`}
+                id="teacher-first-name"
                 value={values.firstName}
                 onChange={(event) =>
-                  onValuesChange({ ...values, firstName: event.target.value })
+                  setValues({ ...values, firstName: event.target.value })
                 }
                 placeholder="First name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -72,16 +170,16 @@ export default function TeacherFormModal({
 
             <div>
               <label
-                htmlFor={`teacher-${mode}-last-name`}
+                htmlFor="teacher-last-name"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
                 Last Name
               </label>
               <input
-                id={`teacher-${mode}-last-name`}
+                id="teacher-last-name"
                 value={values.lastName}
                 onChange={(event) =>
-                  onValuesChange({ ...values, lastName: event.target.value })
+                  setValues({ ...values, lastName: event.target.value })
                 }
                 placeholder="Last name"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -90,17 +188,17 @@ export default function TeacherFormModal({
 
             <div>
               <label
-                htmlFor={`teacher-${mode}-email`}
+                htmlFor="teacher-email"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
                 Email
               </label>
               <input
-                id={`teacher-${mode}-email`}
+                id="teacher-email"
                 type="email"
                 value={values.email}
                 onChange={(event) =>
-                  onValuesChange({ ...values, email: event.target.value })
+                  setValues({ ...values, email: event.target.value })
                 }
                 placeholder="Email address"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -109,16 +207,16 @@ export default function TeacherFormModal({
 
             <div>
               <label
-                htmlFor={`teacher-${mode}-phone`}
+                htmlFor="teacher-phone"
                 className="mb-2 block text-sm font-medium text-slate-700"
               >
                 Phone
               </label>
               <input
-                id={`teacher-${mode}-phone`}
+                id="teacher-phone"
                 value={values.phone}
                 onChange={(event) =>
-                  onValuesChange({ ...values, phone: event.target.value })
+                  setValues({ ...values, phone: event.target.value })
                 }
                 placeholder="Phone number"
                 className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
@@ -128,19 +226,23 @@ export default function TeacherFormModal({
 
           <div>
             <label
-              htmlFor={`teacher-${mode}-password`}
+              htmlFor="teacher-password"
               className="mb-2 block text-sm font-medium text-slate-700"
             >
               Password
             </label>
             <input
-              id={`teacher-${mode}-password`}
+              id="teacher-password"
               type="password"
               value={values.password}
               onChange={(event) =>
-                onValuesChange({ ...values, password: event.target.value })
+                setValues({ ...values, password: event.target.value })
               }
-              placeholder={mode === "create" ? "Password" : "Leave blank to keep current password"}
+              placeholder={
+                !isEditing
+                  ? "Password"
+                  : "Leave blank to keep current password"
+              }
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
             />
           </div>
@@ -160,7 +262,7 @@ export default function TeacherFormModal({
                       type="checkbox"
                       checked={values.classes.includes(option._id)}
                       onChange={() =>
-                        onValuesChange({
+                        setValues({
                           ...values,
                           classes: toggleSelection(values.classes, option._id),
                         })
@@ -187,9 +289,12 @@ export default function TeacherFormModal({
                       type="checkbox"
                       checked={values.subjects.includes(option._id)}
                       onChange={() =>
-                        onValuesChange({
+                        setValues({
                           ...values,
-                          subjects: toggleSelection(values.subjects, option._id),
+                          subjects: toggleSelection(
+                            values.subjects,
+                            option._id,
+                          ),
                         })
                       }
                       className="h-4 w-4 rounded border-slate-300 text-slate-950 focus:ring-slate-400"
@@ -224,7 +329,7 @@ export default function TeacherFormModal({
               disabled={isSubmitting || isOptionsLoading}
               className="rounded-xl bg-slate-950 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? "Saving..." : mode === "create" ? "Create" : "Save Changes"}
+              {isSubmitting ? "Saving..." : submitLabel}
             </button>
           </div>
         </form>

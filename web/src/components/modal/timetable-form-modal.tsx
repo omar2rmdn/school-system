@@ -1,20 +1,64 @@
-import type { DaySlot, TimetableFormModalProps } from "../../types";
+import { useState, type FormEvent } from "react";
+import type { DaySlot, TimetableFormValues, TimetableResource } from "../../types";
 import { timetableDays } from "../../consts/index";
+import { getRelatedId } from "../../utils/helpers";
+import { useCreateTimetableMutation, useUpdateTimetableMutation } from "../../queries/timetables";
+import { getQueryErrorMessage } from "../../queries/users";
+
+export type Props = {
+  timetable?: TimetableResource;
+  classOptions: { id: string; title: string }[];
+  subjectOptions: { id: string; title: string }[];
+  isOptionsLoading: boolean;
+  onClose: () => void;
+};
+
+const defaultValue: TimetableFormValues = {
+  class: "",
+  days: [{ day: "Sunday", startTime: "", endTime: "", subject: "" }],
+};
+
+function getInitialFormValues(
+  timetable?: TimetableResource,
+): TimetableFormValues {
+  if (!timetable) {
+    return defaultValue;
+  }
+
+  return {
+    class: getRelatedId(timetable.class),
+    days: timetable.days.map((slot) => ({
+      day: slot.day,
+      subject: getRelatedId(slot.subject),
+      startTime: slot.startTime,
+      endTime: slot.endTime,
+    })),
+  };
+}
 
 export default function TimetableFormModal({
-  mode,
-  values,
+  timetable,
   classOptions,
   subjectOptions,
-  errorMessage,
-  isSubmitting,
   isOptionsLoading,
-  onChange,
   onClose,
-  onSubmit,
-}: TimetableFormModalProps) {
-  const heading = mode === "create" ? "Add Timetable" : "Edit Timetable";
-  const submitLabel = mode === "create" ? "Create" : "Save Changes";
+}: Props) {
+  const [values, setValues] = useState<TimetableFormValues>(getInitialFormValues(timetable));
+
+  const createMutation = useCreateTimetableMutation();
+  const updateMutation = useUpdateTimetableMutation();
+
+  const isEditing = !!timetable;
+  const isSubmitting = isEditing ? updateMutation.isPending : createMutation.isPending;
+  const error = isEditing ? updateMutation.error : createMutation.error;
+  const errorMessage = error ? getQueryErrorMessage(error) : undefined;
+
+  const heading = isEditing ? "Edit Timetable" : "Add Timetable";
+  const submitLabel = isEditing ? "Save Changes" : "Create";
+
+  function handleChange<K extends keyof TimetableFormValues>(key: K, value: TimetableFormValues[K]) {
+    setValues((prev) => ({ ...prev, [key]: value }));
+  }
 
   function handleDaySlotChange(
     index: number,
@@ -23,11 +67,11 @@ export default function TimetableFormModal({
   ) {
     const newDays = [...values.days];
     newDays[index] = { ...newDays[index], [key]: value };
-    onChange("days", newDays);
+    handleChange("days", newDays);
   }
 
   function addDaySlot() {
-    onChange("days", [
+    handleChange("days", [
       ...values.days,
       { day: "Sunday", startTime: "", endTime: "", subject: "" },
     ]);
@@ -35,11 +79,45 @@ export default function TimetableFormModal({
 
   function removeDaySlot(index: number) {
     if (values.days.length > 1) {
-      onChange(
+      handleChange(
         "days",
         values.days.filter((_, i) => i !== index),
       );
     }
+  }
+
+  async function handleSubmit(event: FormEvent) {
+    event.preventDefault();
+    if (
+      !values.class ||
+      values.days.some((d) => !d.subject || !d.startTime || !d.endTime)
+    ) {
+      return;
+    }
+
+    if (isEditing) {
+      await updateMutation.mutateAsync({
+        id: timetable._id,
+        class: values.class,
+        days: values.days.map((slot) => ({
+          day: slot.day,
+          subject: slot.subject,
+          startTime: slot.startTime.trim(),
+          endTime: slot.endTime.trim(),
+        })),
+      });
+    } else {
+      await createMutation.mutateAsync({
+        class: values.class,
+        days: values.days.map((slot) => ({
+          day: slot.day,
+          subject: slot.subject,
+          startTime: slot.startTime.trim(),
+          endTime: slot.endTime.trim(),
+        })),
+      });
+    }
+    onClose();
   }
 
   return (
@@ -61,7 +139,7 @@ export default function TimetableFormModal({
           </button>
         </div>
 
-        <form onSubmit={onSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
           <div className="max-w-xs">
             <label
               htmlFor="timetable-class"
@@ -72,7 +150,7 @@ export default function TimetableFormModal({
             <select
               id="timetable-class"
               value={values.class}
-              onChange={(event) => onChange("class", event.target.value)}
+              onChange={(event) => handleChange("class", event.target.value)}
               className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-slate-900 outline-none transition focus:border-slate-400"
             >
               <option value="">Select a class</option>

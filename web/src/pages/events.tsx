@@ -1,106 +1,32 @@
-import { type SubmitEvent, useState } from "react";
+import { useState } from "react";
 
 import DeleteEventModal from "../components/modal/delete-event-modal";
 import EventFormModal from "../components/modal/event-form-modal";
 import type { EventResource } from "../types";
-import {
-  useCreateEventMutation,
-  useDeleteEventMutation,
-  useEventsQuery,
-  useUpdateEventMutation,
-} from "../queries/events";
+import { useEventsQuery } from "../queries/events";
 import { getQueryErrorMessage } from "../queries/users";
+import { EventCard } from "../components/cards/event-card";
 
 export default function Events() {
   const { data = [], isLoading, error } = useEventsQuery();
-  const createEventMutation = useCreateEventMutation();
-  const updateEventMutation = useUpdateEventMutation();
-  const deleteEventMutation = useDeleteEventMutation();
 
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<EventResource | null>(null);
   const [deletingEvent, setDeletingEvent] = useState<EventResource | null>(
     null,
   );
-  const [createTitle, setCreateTitle] = useState("");
-  const [createDescription, setCreateDescription] = useState("");
-  const [editTitle, setEditTitle] = useState("");
-  const [editDescription, setEditDescription] = useState("");
 
   const listErrorMessage = error ? getQueryErrorMessage(error) : undefined;
-  const createErrorMessage = createEventMutation.error
-    ? getQueryErrorMessage(createEventMutation.error)
-    : undefined;
-  const updateErrorMessage = updateEventMutation.error
-    ? getQueryErrorMessage(updateEventMutation.error)
-    : undefined;
-  const deleteErrorMessage = deleteEventMutation.error
-    ? getQueryErrorMessage(deleteEventMutation.error)
-    : undefined;
-
-  async function handleCreateSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    const title = createTitle.trim();
-    const description = createDescription.trim();
-    if (!title || !description) {
-      return;
-    }
-
-    await createEventMutation.mutateAsync({ title, description });
-    setCreateTitle("");
-    setCreateDescription("");
-    setIsCreateOpen(false);
-  }
-
-  async function handleEditSubmit(event: SubmitEvent) {
-    event.preventDefault();
-
-    if (!editingEvent) {
-      return;
-    }
-
-    const title = editTitle.trim();
-    const description = editDescription.trim();
-    if (!title || !description) {
-      return;
-    }
-
-    await updateEventMutation.mutateAsync({
-      id: editingEvent._id,
-      title,
-      description,
-    });
-    setEditTitle("");
-    setEditDescription("");
-    setEditingEvent(null);
-  }
-
-  async function handleDeleteConfirm() {
-    if (!deletingEvent) {
-      return;
-    }
-
-    await deleteEventMutation.mutateAsync(deletingEvent._id);
-    setDeletingEvent(null);
-  }
 
   function openCreateModal() {
-    createEventMutation.reset();
-    setCreateTitle("");
-    setCreateDescription("");
     setIsCreateOpen(true);
   }
 
   function openEditModal(resource: EventResource) {
-    updateEventMutation.reset();
-    setEditTitle(resource.title);
-    setEditDescription(resource.description);
     setEditingEvent(resource);
   }
 
   function openDeleteModal(resource: EventResource) {
-    deleteEventMutation.reset();
     setDeletingEvent(resource);
   }
 
@@ -170,32 +96,12 @@ export default function Events() {
                   </tr>
                 ) : (
                   data.map((resource) => (
-                    <tr key={resource._id}>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {resource.title}
-                      </td>
-                      <td className="px-3 py-3 text-sm text-slate-700">
-                        {resource.description}
-                      </td>
-                      <td className="px-3 py-3">
-                        <div className="flex justify-end gap-2">
-                          <button
-                            type="button"
-                            onClick={() => openEditModal(resource)}
-                            className="rounded-lg border border-slate-200 px-3 py-1.5 text-sm font-medium text-slate-700 hover:bg-slate-50"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => openDeleteModal(resource)}
-                            className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-medium text-red-600 hover:bg-red-50"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <EventCard
+                      key={resource._id}
+                      resource={resource}
+                      onEdit={openEditModal}
+                      onDelete={openDeleteModal}
+                    />
                   ))
                 )}
               </tbody>
@@ -204,56 +110,23 @@ export default function Events() {
         </div>
       </section>
 
-      {isCreateOpen ? (
-        <EventFormModal
-          mode="create"
-          titleValue={createTitle}
-          descriptionValue={createDescription}
-          errorMessage={createErrorMessage}
-          isSubmitting={createEventMutation.isPending}
-          onTitleChange={setCreateTitle}
-          onDescriptionChange={setCreateDescription}
-          onClose={() => {
-            createEventMutation.reset();
-            setCreateTitle("");
-            setCreateDescription("");
-            setIsCreateOpen(false);
-          }}
-          onSubmit={handleCreateSubmit}
-        />
-      ) : null}
+      {isCreateOpen && (
+        <EventFormModal onClose={() => setIsCreateOpen(false)} />
+      )}
 
-      {editingEvent ? (
+      {editingEvent && (
         <EventFormModal
-          mode="edit"
-          titleValue={editTitle}
-          descriptionValue={editDescription}
-          errorMessage={updateErrorMessage}
-          isSubmitting={updateEventMutation.isPending}
-          onTitleChange={setEditTitle}
-          onDescriptionChange={setEditDescription}
-          onClose={() => {
-            updateEventMutation.reset();
-            setEditTitle("");
-            setEditDescription("");
-            setEditingEvent(null);
-          }}
-          onSubmit={handleEditSubmit}
+          resource={editingEvent}
+          onClose={() => setEditingEvent(null)}
         />
-      ) : null}
+      )}
 
-      {deletingEvent ? (
+      {deletingEvent && (
         <DeleteEventModal
           resource={deletingEvent}
-          errorMessage={deleteErrorMessage}
-          isSubmitting={deleteEventMutation.isPending}
-          onClose={() => {
-            deleteEventMutation.reset();
-            setDeletingEvent(null);
-          }}
-          onConfirm={handleDeleteConfirm}
+          onClose={() => setDeletingEvent(null)}
         />
-      ) : null}
+      )}
     </>
   );
 }
