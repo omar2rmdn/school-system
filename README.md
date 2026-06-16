@@ -14,7 +14,7 @@ A comprehensive, modern School Management System engineered to streamline admini
 * **Event Management:** Keep all stakeholders informed about upcoming school activities and announcements.
 
 ## Tech Stack
-* **Backend:** Node.js, Express, TypeScript
+* **Backend:** Node.js, Express, TypeScript, Mongodb
 * **Web Admin Console:** React, Vite, TypeScript, Tailwind CSS
 * **Mobile Applications:** React Native, Expo, TypeScript
 
