@@ -13,6 +13,7 @@ import DateTimePicker, {
 } from "@react-native-community/datetimepicker";
 import { formatDate, getStatusColor, getStatusIcon } from "@/utils";
 import { DashboardList } from "@/components/cards/dashboard-list";
+import { AttendanceItem } from "@/components/list-items";
 import { Attendance } from "@/types";
 
 export default function AttendanceScreen() {
@@ -59,35 +60,6 @@ export default function AttendanceScreen() {
     setFromDate(undefined);
     setToDate(undefined);
   };
-
-  const renderAttendanceItem = ({ item }: { item: Attendance }) => (
-    <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
-      <View
-        className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
-          getStatusColor(item.status).split(" ")[1]
-        }`}
-      >
-        <Ionicons
-          name={getStatusIcon(item.status)}
-          size={24}
-          className={getStatusColor(item.status).split(" ")[0]}
-        />
-      </View>
-      <View className="flex-1">
-        <Text className="text-base font-bold text-slate-800 capitalize mb-1">
-          {item.status}
-        </Text>
-        <Text className="text-sm text-slate-500">
-          {new Date(item.date).toLocaleDateString(undefined, {
-            weekday: "long",
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        </Text>
-      </View>
-    </View>
-  );
 
   return (
     <SafeView className="flex-1 bg-slate-50 pt-4">
@@ -180,7 +152,7 @@ export default function AttendanceScreen() {
           variant="list"
           data={attendances ?? []}
           keyExtractor={(item) => item._id}
-          renderItem={renderAttendanceItem}
+          renderItem={({ item }) => <AttendanceItem item={item} />}
           isLoading={isLoading}
           emptyIcon="calendar-outline"
           emptyMessage="No attendance records found for this student."

@@ -16,6 +16,7 @@ import {
   groupTimetableByDay,
   exportTimetableToPDF,
 } from "@/utils";
+import { TimetableItem } from "@/components/list-items";
 
 export default function Timetable() {
   const { classes, activeClassId, setSelectedClassId } = useTeacherFilters();
@@ -95,24 +96,7 @@ export default function Timetable() {
               <Text className="text-lg font-bold text-slate-800">{title}</Text>
             </View>
           )}
-          renderItem={({ item }) => (
-            <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
-              <View className="w-16 h-16 rounded-full bg-indigo-50 items-center justify-center mr-4 border border-indigo-100">
-                <Ionicons name="time-outline" size={24} color="#4f46e5" />
-                <Text className="text-xs font-bold text-indigo-700 mt-1">
-                  {item.startTime}
-                </Text>
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-bold text-slate-800 mb-1">
-                  {getSubjectLabel(item.subject)}
-                </Text>
-                <Text className="text-sm text-slate-500">
-                  {formatTime(item.startTime)} - {formatTime(item.endTime)}
-                </Text>
-              </View>
-            </View>
-          )}
+          renderItem={({ item }) => <TimetableItem item={item} />}
         />
       ) : (
         <View className="flex-1 items-center justify-center p-6">

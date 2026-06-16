@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { getGradeColor } from "@/utils";
 import { DashboardList } from "@/components/cards/dashboard-list";
+import { GradeItem } from "@/components/list-items";
 import { FinalGrade } from "@/types";
 
 export default function FinalGrades() {
@@ -161,7 +162,7 @@ export default function FinalGrades() {
           variant="list"
           data={filteredGrades}
           keyExtractor={(item) => item._id}
-          renderItem={renderGradeItem}
+          renderItem={({ item }) => <GradeItem item={item} subjects={subjects} />}
           isLoading={isLoading}
           emptyIcon="school-outline"
           emptyMessage="No final grades found for this student."

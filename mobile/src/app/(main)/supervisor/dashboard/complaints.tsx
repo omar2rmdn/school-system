@@ -23,8 +23,8 @@ import {
 import { useStudents } from "@/queries/student";
 import { useAuthStore } from "@/store";
 import { Complaint } from "@/types";
-import { formatDateTime } from "@/utils";
 import { DashboardList } from "@/components/cards/dashboard-list";
+import { SupervisorComplaintItem } from "@/components/list-items";
 
 export default function Complaints() {
   const createSheetRef = useRef<BottomSheetMethods>(null);
@@ -37,19 +37,15 @@ export default function Complaints() {
   const [description, setDescription] = useState("");
   const [formError, setFormError] = useState("");
   const [readError, setReadError] = useState("");
-  const [markingComplaintId, setMarkingComplaintId] = useState<string | null>(null);
-  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(null);
+  const [markingComplaintId, setMarkingComplaintId] = useState<string | null>(
+    null,
+  );
+  const [selectedComplaint, setSelectedComplaint] = useState<Complaint | null>(
+    null,
+  );
 
-  const {
-    data: students,
-    isLoading: isStudentsLoading,
-    refetch: refetchStudents,
-  } = useStudents();
-  const {
-    data: complaints,
-    isLoading,
-    refetch,
-  } = useComplaints();
+  const { data: students, isLoading: isStudentsLoading } = useStudents();
+  const { data: complaints, isLoading } = useComplaints();
   const createComplaint = useCreateComplaint();
   const markAsRead = useMarkComplaintAsRead();
 
@@ -100,7 +96,9 @@ export default function Complaints() {
       setMarkingComplaintId(complaintId);
       await markAsRead.mutateAsync(complaintId);
       setSelectedComplaint((current) =>
-        current && current._id === complaintId ? { ...current, isRead: true } : current
+        current && current._id === complaintId
+          ? { ...current, isRead: true }
+          : current,
       );
     } catch (error) {
       const message = isAxiosError<{ message?: string }>(error)
@@ -110,107 +108,6 @@ export default function Complaints() {
     } finally {
       setMarkingComplaintId(null);
     }
-  };
-
-  const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchStudents()]);
-  };
-
-  const renderComplaintItem = ({ item: complaint }: { item: Complaint }) => {
-    const senderId =
-      typeof complaint.sender === "string"
-        ? complaint.sender
-        : complaint.sender._id;
-    const sentByCurrentUser = senderId === currentUserId;
-
-    let senderName = "Unknown sender";
-    let senderRole = "Unknown";
-    if (typeof complaint.sender !== "string") {
-      senderName =
-        `${complaint.sender.firstName ?? ""} ${complaint.sender.lastName ?? ""}`.trim() ||
-        "Unknown sender";
-      if (complaint.sender.role === "parent") {
-        senderRole = "Parent";
-      } else if (complaint.sender.role === "supervisor") {
-        senderRole = "Supervisor";
-      } else if (complaint.sender.role) {
-        senderRole = complaint.sender.role;
-      }
-    }
-
-    let studentName = "Unknown student";
-    if (typeof complaint.student !== "string") {
-      studentName =
-        `${complaint.student.firstName ?? ""} ${complaint.student.lastName ?? ""}`.trim() ||
-        "Unknown student";
-    }
-
-    let badgeLabel = "Unread";
-    let badgeClassName = "border-amber-100 bg-amber-50";
-    let badgeTextClassName = "text-amber-700";
-
-    if (complaint.isRead) {
-      badgeLabel = "Read";
-      badgeClassName = "border-emerald-100 bg-emerald-50";
-      badgeTextClassName = "text-emerald-700";
-    } else if (sentByCurrentUser) {
-      badgeLabel = "Sent";
-      badgeClassName = "border-slate-200 bg-slate-100";
-      badgeTextClassName = "text-slate-600";
-    }
-
-    return (
-      <Pressable
-        onPress={() => openComplaintDetails(complaint)}
-        className="mb-3 rounded-xl border border-slate-100 bg-white p-4 shadow-sm"
-      >
-        <View className="mb-2 flex-row items-start justify-between">
-          <Text className="flex-1 pr-3 text-base font-bold text-slate-800">
-            {complaint.title}
-          </Text>
-          <View className={`rounded-full border px-2.5 py-1 ${badgeClassName}`}>
-            <Text className={`text-xs font-semibold ${badgeTextClassName}`}>
-              {badgeLabel}
-            </Text>
-          </View>
-        </View>
-
-        <Text className="mb-1 text-sm font-medium text-slate-700">
-          {studentName}
-        </Text>
-
-        <Text className="mb-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-          {sentByCurrentUser ? "Sent by you" : `${senderRole} • ${senderName}`}
-        </Text>
-
-        <Text
-          numberOfLines={2}
-          className="mb-3 text-sm leading-6 text-slate-600"
-        >
-          {complaint.description}
-        </Text>
-
-        <View className="flex-row items-center justify-between">
-          <View className="flex-row items-center pr-3">
-            <Ionicons name="time-outline" size={14} color="#94a3b8" />
-            <Text className="ml-1.5 text-xs text-slate-400">
-              {formatDateTime(complaint.createdAt)}
-            </Text>
-          </View>
-
-          <View className="flex-row items-center">
-            <Text className="mr-1.5 text-xs font-semibold text-amber-700">
-              View details
-            </Text>
-            <Ionicons
-              name="chevron-forward"
-              size={14}
-              color="#b45309"
-            />
-          </View>
-        </View>
-      </Pressable>
-    );
   };
 
   return (
@@ -235,14 +132,18 @@ export default function Complaints() {
                 onPress={openSheet}
                 disabled={!students || students.length === 0}
                 className={`rounded-lg px-3 py-2 ${
-                  students && students.length > 0 ? "bg-amber-100" : "bg-slate-200"
+                  students && students.length > 0
+                    ? "bg-amber-100"
+                    : "bg-slate-200"
                 }`}
               >
                 <View className="flex-row items-center">
                   <Ionicons
                     name="add"
                     size={18}
-                    color={students && students.length > 0 ? "#b45309" : "#64748b"}
+                    color={
+                      students && students.length > 0 ? "#b45309" : "#64748b"
+                    }
                   />
                   <Text
                     className={`ml-1 text-sm font-bold ${
@@ -267,7 +168,13 @@ export default function Complaints() {
               variant="list"
               data={complaints ?? []}
               keyExtractor={(item) => item._id}
-              renderItem={renderComplaintItem}
+              renderItem={({ item }) => (
+                <SupervisorComplaintItem
+                  item={item}
+                  currentUserId={currentUserId}
+                  onPress={openComplaintDetails}
+                />
+              )}
               isLoading={false}
               emptyIcon="chatbox-ellipses-outline"
               emptyMessage="No complaints found yet."
@@ -304,7 +211,7 @@ export default function Complaints() {
                   New Complaint
                 </Text>
                 <Text className="text-sm text-slate-500">
-                  Send a complaint to a student's parent.
+                  Send a complaint to a student&apos;s parent.
                 </Text>
               </View>
             </View>
@@ -383,7 +290,9 @@ export default function Complaints() {
 
             <Pressable
               onPress={handleSubmit}
-              disabled={createComplaint.isPending || !students || students.length === 0}
+              disabled={
+                createComplaint.isPending || !students || students.length === 0
+              }
               className={`items-center rounded-xl py-4 shadow-sm ${
                 createComplaint.isPending || !students || students.length === 0
                   ? "bg-amber-300"
