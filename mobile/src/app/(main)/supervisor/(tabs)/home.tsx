@@ -1,10 +1,27 @@
-import { Text, View, ScrollView, TouchableOpacity } from "react-native";
+import { ScrollView, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Href, router } from "expo-router";
 import { SafeView } from "@/components/common/safe-view";
 import WelcomeCard from "@/components/common/welcome-card";
+import { DashboardList } from "@/components/cards/dashboard-list";
+
+const supervisorItems = [
+  {
+    id: 1,
+    title: "Complaints",
+    icon: "chatbox-ellipses",
+    description: "Send complaints and review parent complaints.",
+    color: "text-amber-600",
+    bg: "bg-amber-100",
+    path: "/(main)/supervisor/dashboard/complaints",
+  },
+];
 
 export default function Home() {
+  const handleCardPress = (path: string) => {
+    router.push(path as Href);
+  };
+
   return (
     <SafeView className="flex-1 bg-slate-50">
       <ScrollView
@@ -14,26 +31,7 @@ export default function Home() {
         <WelcomeCard fallback="Supervisor" />
 
         <View className="px-4">
-          <View className="overflow-hidden rounded-xl border border-slate-100 bg-white shadow-sm">
-            <TouchableOpacity
-              onPress={() => router.push("/(main)/supervisor/dashboard/complaints" as Href)}
-              className="flex-row items-center p-4"
-              activeOpacity={0.7}
-            >
-              <View className="mr-4 h-12 w-12 items-center justify-center rounded-full bg-amber-100">
-                <Ionicons name="chatbox-ellipses" size={24} color="#d97706" />
-              </View>
-              <View className="flex-1">
-                <Text className="mb-0.5 text-lg font-bold text-slate-800">
-                  Complaints
-                </Text>
-                <Text className="text-sm text-slate-500">
-                  Send complaints and review parent complaints.
-                </Text>
-              </View>
-              <Ionicons name="chevron-forward" size={20} color="#94a3b8" />
-            </TouchableOpacity>
-          </View>
+          <DashboardList variant="menu" items={supervisorItems} onPress={handleCardPress} />
         </View>
       </ScrollView>
     </SafeView>

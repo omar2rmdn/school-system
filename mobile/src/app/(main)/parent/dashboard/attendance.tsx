@@ -1,8 +1,6 @@
 import {
   View,
   Text,
-  ActivityIndicator,
-  FlatList,
   TouchableOpacity,
 } from "react-native";
 import { SafeView } from "@/components/common/safe-view";
@@ -14,8 +12,10 @@ import DateTimePicker, {
   DateTimePickerEvent,
 } from "@react-native-community/datetimepicker";
 import { formatDate, getStatusColor, getStatusIcon } from "@/utils";
+import { DashboardList } from "@/components/cards/dashboard-list";
+import { Attendance } from "@/types";
 
-export default function Attendance() {
+export default function AttendanceScreen() {
   const { selectedStudentId } = useStudentStore();
 
   const [fromDate, setFromDate] = useState<Date | undefined>(undefined);
@@ -59,6 +59,35 @@ export default function Attendance() {
     setFromDate(undefined);
     setToDate(undefined);
   };
+
+  const renderAttendanceItem = ({ item }: { item: Attendance }) => (
+    <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
+      <View
+        className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
+          getStatusColor(item.status).split(" ")[1]
+        }`}
+      >
+        <Ionicons
+          name={getStatusIcon(item.status)}
+          size={24}
+          className={getStatusColor(item.status).split(" ")[0]}
+        />
+      </View>
+      <View className="flex-1">
+        <Text className="text-base font-bold text-slate-800 capitalize mb-1">
+          {item.status}
+        </Text>
+        <Text className="text-sm text-slate-500">
+          {new Date(item.date).toLocaleDateString(undefined, {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
+        </Text>
+      </View>
+    </View>
+  );
 
   return (
     <SafeView className="flex-1 bg-slate-50 pt-4">
@@ -146,55 +175,16 @@ export default function Attendance() {
             Please select a student from the home screen first.
           </Text>
         </View>
-      ) : isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      ) : attendances && attendances.length > 0 ? (
-        <FlatList
-          data={attendances}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 24,
-            paddingTop: 16,
-          }}
-          renderItem={({ item }) => (
-            <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
-              <View
-                className={`w-12 h-12 rounded-full items-center justify-center mr-4 ${
-                  getStatusColor(item.status).split(" ")[1]
-                }`}
-              >
-                <Ionicons
-                  name={getStatusIcon(item.status)}
-                  size={24}
-                  className={getStatusColor(item.status).split(" ")[0]}
-                />
-              </View>
-              <View className="flex-1">
-                <Text className="text-base font-bold text-slate-800 capitalize mb-1">
-                  {item.status}
-                </Text>
-                <Text className="text-sm text-slate-500">
-                  {new Date(item.date).toLocaleDateString(undefined, {
-                    weekday: "long",
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </Text>
-              </View>
-            </View>
-          )}
-        />
       ) : (
-        <View className="flex-1 items-center justify-center p-6">
-          <Ionicons name="calendar-outline" size={64} color="#cbd5e1" />
-          <Text className="text-lg text-slate-500 mt-4 text-center">
-            No attendance records found for this student.
-          </Text>
-        </View>
+        <DashboardList
+          variant="list"
+          data={attendances ?? []}
+          keyExtractor={(item) => item._id}
+          renderItem={renderAttendanceItem}
+          isLoading={isLoading}
+          emptyIcon="calendar-outline"
+          emptyMessage="No attendance records found for this student."
+        />
       )}
     </SafeView>
   );

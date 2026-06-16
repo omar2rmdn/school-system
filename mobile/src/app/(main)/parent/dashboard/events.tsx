@@ -1,9 +1,10 @@
 import React from "react";
-import { View, Text, FlatList, ActivityIndicator } from "react-native";
+import { View, Text, TouchableOpacity } from "react-native";
 import { SafeView } from "@/components/common/safe-view";
 import { useEvents } from "@/queries/events";
 import { AppEvent } from "@/types";
 import { Ionicons } from "@expo/vector-icons";
+import { DashboardList } from "@/components/cards/dashboard-list";
 
 export default function Events() {
   const { data: events, isLoading, isError } = useEvents();
@@ -39,28 +40,18 @@ export default function Events() {
         <Text className="text-2xl font-bold text-gray-900">Events</Text>
       </View>
 
-      {isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#10b981" />
-        </View>
-      ) : isError ? (
-        <View className="flex-1 items-center justify-center px-6">
-          <Text className="text-red-500 text-center">Failed to load events</Text>
-        </View>
-      ) : (
-        <FlatList
-          data={events}
-          keyExtractor={(item) => item._id}
-          renderItem={renderEvent}
-          contentContainerClassName="p-6"
-          ListEmptyComponent={
-            <View className="items-center justify-center py-10">
-              <Ionicons name="calendar-outline" size={48} color="#9ca3af" />
-              <Text className="text-gray-500 mt-4">No events found.</Text>
-            </View>
-          }
-        />
-      )}
+      <DashboardList
+        variant="list"
+        data={events ?? []}
+        keyExtractor={(item) => item._id}
+        renderItem={renderEvent}
+        isLoading={isLoading}
+        loadingColor="#10b981"
+        emptyIcon="calendar-outline"
+        emptyMessage="No events found."
+        error={isError ? "Failed to load events" : null}
+        contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 0 }}
+      />
     </SafeView>
   );
 }

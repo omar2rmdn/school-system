@@ -1,8 +1,6 @@
 import {
   View,
   Text,
-  ActivityIndicator,
-  FlatList,
   TouchableOpacity,
   Modal,
   ScrollView,
@@ -14,6 +12,8 @@ import { useSubjects } from "@/queries/subjects";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { getGradeColor } from "@/utils";
+import { DashboardList } from "@/components/cards/dashboard-list";
+import { FinalGrade } from "@/types";
 
 export default function Grades() {
   const { selectedStudentId } = useStudentStore();
@@ -29,7 +29,6 @@ export default function Grades() {
   const [showYearPicker, setShowYearPicker] = useState(false);
   const termOptions: Array<"first" | "second"> = ["first", "second"];
 
-  // Extract unique terms and years for the dropdowns
   const availableTerms = (() => {
     if (!finalGrades) return [];
     const terms = new Set(finalGrades.map((g) => g.term));
@@ -42,7 +41,6 @@ export default function Grades() {
     return Array.from(years).sort((a, b) => b.localeCompare(a));
   })();
 
-  // Filter grades based on selection
   const filteredGrades = (() => {
     if (!finalGrades) return [];
     return finalGrades.filter((grade) => {
@@ -57,6 +55,44 @@ export default function Grades() {
   const clearFilters = () => {
     setSelectedTerm(null);
     setSelectedYear(null);
+  };
+
+  const renderGradeItem = ({ item }: { item: FinalGrade }) => {
+    const subjectId =
+      typeof item.subject === "string" ? item.subject : item.subject._id;
+    const subjectTitle =
+      typeof item.subject === "string"
+        ? subjects?.find((subject) => subject._id === subjectId)?.title ||
+          "Unknown Subject"
+        : item.subject?.name ||
+          item.subject?.title ||
+          subjects?.find((subject) => subject._id === subjectId)?.title ||
+          "Unknown Subject";
+
+    return (
+      <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
+        <View className="flex-1">
+          <Text className="text-base font-bold text-slate-800 mb-1">
+            {subjectTitle}
+          </Text>
+          <Text className="text-sm text-slate-500">
+            {item.academicYear} •{" "}
+            {item.term === "first" ? "First Term" : "Second Term"}
+          </Text>
+        </View>
+        <View
+          className={`w-14 h-14 rounded-full items-center justify-center ml-4 ${
+            getGradeColor(item.score).split(" ")[1]
+          }`}
+        >
+          <Text
+            className={`text-lg font-bold ${getGradeColor(item.score).split(" ")[0]}`}
+          >
+            {item.score}
+          </Text>
+        </View>
+      </View>
+    );
   };
 
   return (
@@ -121,67 +157,18 @@ export default function Grades() {
             Please select a student from the home screen first.
           </Text>
         </View>
-      ) : isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator size="large" color="#059669" />
-        </View>
-      ) : filteredGrades && filteredGrades.length > 0 ? (
-        <FlatList
+      ) : (
+        <DashboardList
+          variant="list"
           data={filteredGrades}
           keyExtractor={(item) => item._id}
-          contentContainerStyle={{
-            paddingHorizontal: 16,
-            paddingBottom: 24,
-            paddingTop: 16,
-          }}
-          renderItem={({ item }) => {
-            const subjectId =
-              typeof item.subject === "string" ? item.subject : item.subject._id;
-            const subjectTitle =
-              typeof item.subject === "string"
-                ? subjects?.find((subject) => subject._id === subjectId)?.title ||
-                  "Unknown Subject"
-                : item.subject?.name ||
-                  item.subject?.title ||
-                  subjects?.find((subject) => subject._id === subjectId)?.title ||
-                  "Unknown Subject";
-
-            return (
-              <View className="bg-white p-4 rounded-xl shadow-sm mb-3 border border-slate-100 flex-row items-center">
-                <View className="flex-1">
-                  <Text className="text-base font-bold text-slate-800 mb-1">
-                    {subjectTitle}
-                  </Text>
-                  <Text className="text-sm text-slate-500">
-                    {item.academicYear} •{" "}
-                    {item.term === "first" ? "First Term" : "Second Term"}
-                  </Text>
-                </View>
-                <View
-                  className={`w-14 h-14 rounded-full items-center justify-center ml-4 ${
-                    getGradeColor(item.score).split(" ")[1]
-                  }`}
-                >
-                  <Text
-                    className={`text-lg font-bold ${getGradeColor(item.score).split(" ")[0]}`}
-                  >
-                    {item.score}
-                  </Text>
-                </View>
-              </View>
-            );
-          }}
+          renderItem={renderGradeItem}
+          isLoading={isLoading}
+          emptyIcon="school-outline"
+          emptyMessage="No final grades found for this student."
         />
-      ) : (
-        <View className="flex-1 items-center justify-center p-6">
-          <Ionicons name="school-outline" size={64} color="#cbd5e1" />
-          <Text className="text-lg text-slate-500 mt-4 text-center">
-            No final grades found for this student.
-          </Text>
-        </View>
       )}
 
-      {/* Year Picker Modal */}
       <Modal visible={showYearPicker} transparent animationType="fade">
         <TouchableOpacity
           className="flex-1 bg-black/50 justify-end"
@@ -238,7 +225,6 @@ export default function Grades() {
         </TouchableOpacity>
       </Modal>
 
-      {/* Term Picker Modal */}
       <Modal visible={showTermPicker} transparent animationType="fade">
         <TouchableOpacity
           className="flex-1 bg-black/50 justify-end"
