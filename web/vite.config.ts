@@ -8,7 +8,7 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "https://school-backend.omar2rmdn.deno.net",
+        target: "hhtp://localhost:8000",
         changeOrigin: true,
       },
     },
